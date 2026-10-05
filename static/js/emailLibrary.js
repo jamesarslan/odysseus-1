@@ -5,7 +5,7 @@
 
 import spinnerModule from './spinner.js';
 import { styledConfirm, showToast, emptyStateIcon } from './ui.js';
-import { folderDisplayName, sortedFolders } from './emailInbox.js?v=20260815approvalsave1';
+import { folderDisplayName, folderRole, sortedFolders } from './emailInbox.js?v=20260815approvalsave1';
 import settingsModule from './settings.js';
 import * as Modals from './modalManager.js';
 import { topPortalZ } from './toolWindowZOrder.js';
@@ -891,7 +891,7 @@ function _syncEmailReadState(uid, isRead = true, context = null) {
     }
 
     if (!titleRow || titleRow.querySelector('.email-card-unread-dot, [data-unread-dot]')) return;
-    const isSentFolder = /sent/i.test(state._libFolder || '');
+    const isSentFolder = _emailFolderRole(state._libFolder) === 'sent';
     if (isSentFolder) return;
     const senderName = match ? (match.from_name || match.from_address || '') : '';
     const dot = document.createElement('span');
@@ -2456,6 +2456,7 @@ function _libCacheWriteBack() {
 // Expose the active account id to other modules (document.js uses this when sending).
 // Simple global rather than cross-module import to keep coupling minimal.
 function _publishActiveAccount() {
+  _resetEmailFoldersForAccount();
   try { window.__odysseusActiveEmailAccount = state._libAccountId || null; } catch (_) {}
   try {
     if (state._libAccountId) localStorage.setItem(_LIB_LAST_ACCOUNT_KEY, state._libAccountId);
@@ -2593,8 +2594,8 @@ export function openEmailLibrary(opts = {}) {
           </div>
           <div class="memory-toolbar">
             <div class="memory-category-filters">
-              <select class="memory-sort-select" id="email-lib-folder" style="flex:1;min-width:0;text-overflow:ellipsis;">
-                <option value="INBOX">Inbox</option>
+              <select class="memory-sort-select" id="email-lib-folder" style="flex:1;min-width:0;text-overflow:ellipsis;" disabled>
+                <option value="" disabled>Loading folders…</option>
               </select>
               <!-- Hidden native select kept as the source of truth — all
                    existing change handlers still fire via the custom picker
@@ -3465,21 +3466,55 @@ function _snapEmailModalToLeftSidebar(modal) {
   return true;
 }
 
-async function _loadFolders({ resetMissing = false, live = false } = {}) {
+function _resetEmailFoldersForAccount() {
+  const accountId = state._libAccountId || '';
+  if (state._libFoldersAccountId === accountId) return;
+  const previousAccountId = state._libFoldersAccountId;
+  state._libFoldersAccountId = accountId;
+  state._libFolders = [];
+  state._libFolderRoles = {};
+  state._libFolderDisplayNames = {};
+  ++_libFolderSeq;
+  if (previousAccountId !== null && state._libFolder !== '__scheduled__') state._libFolder = 'INBOX';
+  const sel = document.getElementById('email-lib-folder');
+  if (sel) {
+    sel.innerHTML = '';
+    const loading = document.createElement('option');
+    loading.value = '';
+    loading.disabled = true;
+    loading.textContent = 'Loading folders…';
+    sel.appendChild(loading);
+    sel.disabled = true;
+  }
+}
+
+function _emailFolderRole(folder) {
+  const roles = state._libFoldersAccountId === (state._libAccountId || '')
+    ? state._libFolderRoles || {}
+    : {};
+  return folderRole(folder, roles);
+}
+
+async function _loadFolders({ resetMissing = false } = {}) {
+  _resetEmailFoldersForAccount();
   const seq = ++_libFolderSeq;
   const accountAtStart = state._libAccountId || '';
   try {
     const res = await fetch(emailApiUrl('/api/email/folders', {
       account_id: accountAtStart || undefined,
-      cached_only: live ? undefined : 1,
     }));
-    let data = await res.json();
+    const data = await res.json();
     if (seq !== _libFolderSeq || accountAtStart !== (state._libAccountId || '')) return;
     const sel = document.getElementById('email-lib-folder');
-    if (!sel || !data.folders) return;
+    if (!sel || !Array.isArray(data.folders)) return;
+    if (data.error && !data.folders.length && state._libFolders.length) return;
+    const previousRole = _emailFolderRole(state._libFolder);
     state._libFolders = data.folders;
-    if (resetMissing && state._libFolder !== '__scheduled__' && !data.folders.includes(state._libFolder)) {
-      state._libFolder = data.folders.includes('INBOX') ? 'INBOX' : (data.folders[0] || 'INBOX');
+    state._libFolderRoles = data.roles || {};
+    state._libFolderDisplayNames = data.display_names || {};
+    const folderAtStart = state._libFolder;
+    if (resetMissing && data.folders.length && state._libFolder !== '__scheduled__' && !data.folders.includes(state._libFolder)) {
+      state._libFolder = data.folders.find(f => _emailFolderRole(f) === 'inbox') || data.folders[0];
       state._libFilter = 'all';
       state._libSearch = '';
       state._libHasAttachments = false;
@@ -3494,11 +3529,11 @@ async function _loadFolders({ resetMissing = false, live = false } = {}) {
       _syncReminderClearButton();
     }
     sel.innerHTML = '';
-    const { priority, others } = sortedFolders(data.folders);
+    const { priority, others } = sortedFolders(data.folders, state._libFolderRoles);
     for (const f of priority) {
       const opt = document.createElement('option');
       opt.value = f;
-      opt.textContent = folderDisplayName(f);
+      opt.textContent = folderDisplayName(f, state._libFolderRoles, state._libFolderDisplayNames);
       if (f === state._libFolder) opt.selected = true;
       sel.appendChild(opt);
     }
@@ -3511,9 +3546,16 @@ async function _loadFolders({ resetMissing = false, live = false } = {}) {
     for (const f of others) {
       const opt = document.createElement('option');
       opt.value = f;
-      opt.textContent = folderDisplayName(f);
+      opt.textContent = folderDisplayName(f, state._libFolderRoles, state._libFolderDisplayNames);
       if (f === state._libFolder) opt.selected = true;
       sel.appendChild(opt);
+    }
+    if (!data.folders.length) {
+      const unavailable = document.createElement('option');
+      unavailable.value = '';
+      unavailable.disabled = true;
+      unavailable.textContent = data.error || 'No mail folders available';
+      sel.appendChild(unavailable);
     }
     // Scheduled (special virtual folder)
     const sep2 = document.createElement('option');
@@ -3525,41 +3567,27 @@ async function _loadFolders({ resetMissing = false, live = false } = {}) {
     schedOpt.textContent = 'Scheduled';
     if (state._libFolder === '__scheduled__') schedOpt.selected = true;
     sel.appendChild(schedOpt);
-    sel.value = state._libFolder;
-  } catch (e) {}
+    sel.disabled = false;
+    sel.value = data.folders.includes(state._libFolder) || state._libFolder === '__scheduled__'
+      ? state._libFolder : '';
+    if (state._libFolder !== folderAtStart) _loadEmailsFresh();
+    else if (previousRole !== _emailFolderRole(state._libFolder) && state._libEmails?.length) _renderGrid();
+  } catch (e) {
+    if (seq !== _libFolderSeq || accountAtStart !== (state._libAccountId || '')) return;
+    const sel = document.getElementById('email-lib-folder');
+    if (sel?.options[0] && !state._libFolders.length) {
+      sel.options[0].textContent = 'Could not load folders';
+      sel.disabled = true;
+    }
+  }
 }
 
 function _crossFolderCandidates() {
-  const available = Array.isArray(state._libFolders) ? state._libFolders.filter(Boolean) : [];
-  const lower = new Map(available.map(f => [String(f).toLowerCase(), f]));
-  const pick = (patterns, fallback) => {
-    for (const p of patterns) {
-      const direct = lower.get(String(p).toLowerCase());
-      if (direct) return direct;
-    }
-    const match = available.find(f => patterns.some(p => String(f).toLowerCase().includes(String(p).toLowerCase())));
-    return match || fallback;
-  };
-  const candidates = [
-    pick(['INBOX'], 'INBOX'),
-    pick(['[Gmail]/Sent Mail', 'Sent Mail', 'Sent Items', 'INBOX.Sent', 'Sent'], '[Gmail]/Sent Mail'),
-    pick(['Archive', '[Gmail]/All Mail', 'All Mail'], '[Gmail]/All Mail'),
-  ];
-  return Array.from(new Set(candidates.filter(Boolean)));
-}
-
-function _findEmailFolder(patterns, fallback) {
-  const available = Array.isArray(state._libFolders) ? state._libFolders.filter(Boolean) : [];
-  const lower = new Map(available.map(f => [String(f).toLowerCase(), f]));
-  for (const p of patterns) {
-    const direct = lower.get(String(p).toLowerCase());
-    if (direct) return direct;
-  }
-  return available.find(f => patterns.some(p => String(f).toLowerCase().includes(String(p).toLowerCase()))) || fallback;
+  return (state._libFolders || []).filter(f => ['inbox', 'sent', 'archive', 'all'].includes(_emailFolderRole(f)));
 }
 
 function _sentFolderName() {
-  return _findEmailFolder(['[Gmail]/Sent Mail', 'Sent Mail', 'Sent Items', 'INBOX.Sent', 'Sent'], 'Sent');
+  return (state._libFolders || []).find(f => _emailFolderRole(f) === 'sent') || '';
 }
 
 function _deriveSearchScope(rawQuery) {
@@ -4283,7 +4311,17 @@ async function _doSearch() {
   _exitEmailReaderModeForList();
   _resetBulkSelectionForContextChange({ rerender: true });
   const seq = ++_libSearchSeq;
-  const derived = _deriveSearchScope(state._libSearch);
+  let derived = _deriveSearchScope(state._libSearch);
+  if (derived.scope === 'sent' && !derived.folder) {
+    const searchAccount = state._libAccountId || '';
+    await _loadFolders();
+    if (seq !== _libSearchSeq || searchAccount !== (state._libAccountId || '')) return;
+    derived = _deriveSearchScope(state._libSearch);
+    if (derived.scope === 'sent' && !derived.folder) {
+      showToast('Sent folder is unavailable. Try loading the folder list again.');
+      return;
+    }
+  }
   const q = derived.q;
   if (q.length < 2 && !derived.forced) {
     // Empty or too short — restore the normal folder if a previous search
@@ -5077,7 +5115,7 @@ function _createCard(em) {
   // real folder while the visible folder selector still says INBOX, so use the
   // email's folder first.
   const cardFolder = em.folder || state._libFolder || 'INBOX';
-  const isSentFolderEarly = /sent/i.test(cardFolder);
+  const isSentFolderEarly = _emailFolderRole(cardFolder) === 'sent';
   let senderName;
   let senderAddress;
   if (isSentFolderEarly) {
@@ -5156,7 +5194,7 @@ function _createCard(em) {
   }
 
   // Done check + unread dot stay next to the subject on the left.
-  const isSentFolder = /sent/i.test(cardFolder);
+  const isSentFolder = _emailFolderRole(cardFolder) === 'sent';
   if (!isSentFolder) {
     const doneCheck = document.createElement('span');
     doneCheck.className = 'email-card-done' + (em.is_answered ? ' active' : '');
@@ -5246,7 +5284,7 @@ function _createCard(em) {
   meta.className = 'memory-item-meta';
   meta.style.cssText = 'font-size:10px;opacity:0.7;margin-top:2px;';
   const showFolderChip = !!(_libSearchHadResults && cardFolder);
-  const prettyFolder = folderDisplayName(cardFolder);
+  const prettyFolder = folderDisplayName(cardFolder, state._libFolderRoles, state._libFolderDisplayNames);
   const sentChip = isSentFolderEarly ? '<span class="email-sent-chip" title="Sent email">Sent</span>' : '';
   const folderChip = showFolderChip && !isSentFolderEarly
     ? `<span class="email-folder-chip" title="${_esc(cardFolder)}">${_esc(prettyFolder)}</span>`
@@ -5747,8 +5785,7 @@ function _setBubblesDisabled(v) {
 
 function _renderEmailBody(data) {
   const plain = (typeof data?.body === 'string' && data.body.length) ? data.body : '';
-  const folder = String(data?.folder || '').toLowerCase();
-  const isSentFolder = folder.includes('sent');
+  const isSentFolder = _emailFolderRole(data?.folder) === 'sent';
   const fromAddr = String(data?.from_address || '').toLowerCase().trim();
   const isMine = !!fromAddr && _meEmailAddrs().has(fromAddr);
 
@@ -7947,7 +7984,7 @@ function _showCardMenu(em, anchor) {
   const _checkIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
   const _cardBellIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
 
-  const isSentFolder = /sent/i.test(state._libFolder);
+  const isSentFolder = _emailFolderRole(em.folder || state._libFolder) === 'sent';
 
   const _newTabIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
   const actions = [
