@@ -17,6 +17,7 @@ from src.endpoint_resolver import resolve_endpoint
 from src.auth_helpers import _auth_disabled, get_current_user
 from src.owner_identity import REQUEST_SENTINEL_OWNERS
 from src.constants import DEEP_RESEARCH_DIR
+from src.research_handler import _research_failure_fields
 
 _SESSION_ID_RE = re.compile(r"^[a-zA-Z0-9-]{1,128}$")
 
@@ -402,6 +403,7 @@ def setup_research_routes(research_handler, session_manager=None) -> APIRouter:
                     "completed_at": d.get("completed_at", 0),
                     "archived": bool(d.get("archived")),
                     "thumbnail": _research_thumbnail(d),
+                    **_research_failure_fields(d),
                 })
             except Exception:
                 continue
@@ -432,7 +434,7 @@ def setup_research_routes(research_handler, session_manager=None) -> APIRouter:
         # SECURITY: 404 (not 403) so we don't leak that the report exists.
         if data.get("owner") != user:
             raise HTTPException(404, "Research not found")
-        return data
+        return {**data, **_research_failure_fields(data)}
 
     @router.post("/api/research/{session_id}/archive")
     async def research_archive(session_id: str, request: Request, archived: bool = Query(True)):
@@ -596,8 +598,8 @@ def setup_research_routes(research_handler, session_manager=None) -> APIRouter:
                     last_progress = progress
                     yield f"data: {json.dumps({**progress, 'status': st})}\n\n"
                 if st != "running":
-                    final = {'status': st, 'final': True}
                     task = research_handler._active_tasks.get(session_id, {})
+                    final = {'status': st, 'final': True, **_research_failure_fields(task)}
                     if st == "error" and task.get("result"):
                         final['error'] = str(task["result"])[:500]
                     yield f"data: {json.dumps(final)}\n\n"
@@ -626,11 +628,19 @@ def setup_research_routes(research_handler, session_manager=None) -> APIRouter:
                     "sources": d.get("sources", []),
                     "raw_findings": d.get("raw_findings", []),
                     "category": d.get("category") or "",
+                    **_research_failure_fields(d),
                 }
             raise HTTPException(404, "No research result available")
         sources = research_handler.get_sources(session_id) or []
         raw_findings = research_handler.get_raw_findings(session_id) or []
-        return {"result": result, "sources": sources, "raw_findings": raw_findings, "category": ""}
+        task = research_handler._active_tasks.get(session_id)
+        failure_data = task or {}
+        if task is None and owned_disk_path is not None:
+            failure_data = json.loads(owned_disk_path.read_text(encoding="utf-8"))
+        return {
+            "result": result, "sources": sources, "raw_findings": raw_findings,
+            "category": "", **_research_failure_fields(failure_data),
+        }
 
     @router.post("/api/research/spinoff/{session_id}")
     async def research_spinoff(session_id: str, request: Request):

@@ -1048,6 +1048,17 @@ def _apply_local_cache_affinity(payload: Dict, url: str, session_id: Optional[st
     payload.setdefault("cache_prompt", True)
 
 
+def _effective_thinking_override(url: str, model: str, enable_thinking: Optional[bool]) -> Optional[bool]:
+    """Gate optional template controls to local servers, including Ollama."""
+    if not isinstance(enable_thinking, bool) or not _supports_thinking(model):
+        return None
+    if (
+        _detect_provider(url) == "ollama" and is_local_endpoint(url)
+    ) or _is_self_hosted_openai_compatible(url):
+        return enable_thinking
+    return None
+
+
 def _is_local_minimax_mlx_request(url: str, model: str) -> bool:
     """Local MLX MiniMax-family endpoints need conservative sampling defaults.
 
@@ -2273,8 +2284,19 @@ async def llm_call_async(
     workload: str = "foreground",
     availability_only_transport: bool = False,
     return_model_metadata: bool = False,
+    require_complete_response: bool = False,
+    enable_thinking: Optional[bool] = None,
 ) -> str | tuple[str, str]:
-    """Asynchronous LLM call using httpx with connection pooling, timeout, retry logic, and performance logging."""
+    """Call an LLM with connection pooling, retries, and response caching.
+
+    ``require_complete_response`` returns final answer text only and rejects
+    empty answers or provider-reported output truncation. The default retains
+    the existing reasoning-content fallback for other callers.
+
+    ``enable_thinking`` optionally controls thinking for local compatible
+    models (such as Qwen templates) and local native Ollama. Cloud APIs and unknown
+    models retain their existing payloads; ``None`` preserves all defaults.
+    """
     provider = _detect_provider(url)
     messages_copy = _sanitize_llm_messages(messages)
 
@@ -2294,6 +2316,13 @@ async def llm_call_async(
     cache_key = _get_cache_key(
         url, model, messages_copy, temperature, max_tokens, headers=headers,
     )
+    thinking_override = _effective_thinking_override(url, model, enable_thinking)
+    if thinking_override is not None:
+        cache_key = f"thinking:{int(thinking_override)}:" + cache_key
+    if require_complete_response:
+        # Existing entries may contain a reasoning-only or truncated response.
+        # Only responses validated under this contract can share its cache.
+        cache_key = "complete:" + cache_key
     cached_response = _get_cached_response(cache_key)
     if cached_response:
         logger.debug(f"Returning cached response for key: {cache_key}")
@@ -2307,6 +2336,8 @@ async def llm_call_async(
         # Reuse stream_llm's validated Codex SSE path and collect deltas.
         parts: List[str] = []
         actual_model = model
+        completed = False
+        completion_options = {"require_complete_response": True} if require_complete_response else {}
         async for chunk in stream_llm(
             url,
             model,
@@ -2316,6 +2347,7 @@ async def llm_call_async(
             headers=headers,
             timeout=timeout,
             workload=workload,
+            **completion_options,
         ):
             event_is_error = False
             for line in str(chunk).splitlines():
@@ -2329,6 +2361,10 @@ async def llm_call_async(
                     continue
                 if raw == "[DONE]":
                     response = "".join(parts)
+                    if require_complete_response:
+                        if not completed:
+                            raise HTTPException(502, "LLM stream ended before completing the final answer")
+                        _validate_complete_response(response)
                     _set_cached_response(
                         cache_key,
                         response,
@@ -2356,10 +2392,14 @@ async def llm_call_async(
                     reported_model = data.get("model")
                     if isinstance(reported_model, str) and reported_model.strip():
                         actual_model = reported_model.strip()
+                if data.get("type") == "response_complete":
+                    completed = True
                 delta = data.get("delta")
                 if isinstance(delta, str):
                     parts.append(delta)
         response = "".join(parts)
+        if require_complete_response:
+            raise HTTPException(502, "LLM stream ended before completing the final answer")
         _set_cached_response(cache_key, response, actual_model=actual_model)
         return (response, actual_model) if return_model_metadata else response
 
@@ -2376,6 +2416,8 @@ async def llm_call_async(
             model, messages_copy, temperature, max_tokens,
             stream=False, num_ctx=get_context_length(url, model),
         )
+        if thinking_override is not None:
+            payload["think"] = thinking_override
     else:
         target_url = _normalize_openai_chat_url(url)
         h = _provider_headers(provider, headers)
@@ -2394,7 +2436,9 @@ async def llm_call_async(
             payload[tok_key] = max_tokens
         # Suppress thinking for qwen3/gemma4 on Ollama /v1 — same as stream_llm.
         if _is_ollama_openai_compat_url(url) and _supports_thinking(model):
-            payload["think"] = False
+            payload["think"] = thinking_override if thinking_override is not None else False
+        if thinking_override is not None and _is_self_hosted_openai_compatible(url):
+            payload["chat_template_kwargs"] = {"enable_thinking": thinking_override}
         if provider == "mistral" and _supports_thinking(model):
             payload["reasoning_effort"] = _MISTRAL_REASONING_EFFORT
         _apply_local_cache_affinity(payload, url, session_id)
@@ -2444,21 +2488,33 @@ async def llm_call_async(
                 )
                 if provider == "anthropic":
                     response = _parse_anthropic_response(data)
+                    finish_reason = data.get("stop_reason")
                 elif provider == "ollama":
                     response = _parse_ollama_response(data)
+                    finish_reason = data.get("done_reason")
                 else:
-                    msg = data["choices"][0]["message"]
+                    choice = data["choices"][0]
+                    finish_reason = choice.get("finish_reason")
+                    msg = choice["message"]
                     content = msg.get("content")
                     if isinstance(content, list):
                         # Mistral structured content — extract thinking + text
                         # (same contract as llm_call / stream_llm; see #5435).
                         text_part, thinking_part = _normalize_mistral_content(content)
-                        if thinking_part:
+                        if require_complete_response:
+                            response = text_part or ""
+                        elif thinking_part:
                             response = thinking_part + "\n\n" + (text_part or "")
                         else:
                             response = text_part or msg.get("reasoning_content") or ""
                     else:
-                        response = content or msg.get("reasoning_content") or ""
+                        response = (
+                            content or ""
+                            if require_complete_response
+                            else content or msg.get("reasoning_content") or ""
+                        )
+                if require_complete_response:
+                    _validate_complete_response(response, finish_reason)
                 _set_cached_response(
                     cache_key,
                     response,
@@ -2545,6 +2601,18 @@ async def llm_call_async(
                 f"POST {target_url} could not be configured: {e}",
             )
 
+
+def _validate_complete_response(response: str, finish_reason=None) -> None:
+    """Reject unfinished utility output without exposing reasoning text."""
+    if finish_reason in {"length", "max_tokens"}:
+        raise HTTPException(
+            502,
+            "LLM reached its output token limit before completing the final answer",
+        )
+    if not isinstance(response, str) or not response.strip():
+        raise HTTPException(502, "LLM did not return a final answer")
+
+
 def _stream_target_url(url: str) -> str:
     provider = _detect_provider(url)
     if provider == "anthropic":
@@ -2560,8 +2628,10 @@ async def stream_llm(url: str, model: str, messages: List[Dict], temperature: fl
                      max_tokens: int = LLMConfig.DEFAULT_MAX_TOKENS, headers: Optional[Dict] = None,
                      timeout: int = LLMConfig.STREAM_TIMEOUT, prompt_type: Optional[str] = None,
                      tools: Optional[List[Dict]] = None, session_id: Optional[str] = None,
-                     tool_choice_none: bool = False, workload: str = "foreground"):
+                     tool_choice_none: bool = False, workload: str = "foreground",
+                     require_complete_response: bool = False):
     target_url = _stream_target_url(url)
+    completion_options = {"require_complete_response": True} if require_complete_response else {}
     async with _local_model_slot(target_url, model, workload):
         async for chunk in _stream_llm_inner(
             url,
@@ -2575,6 +2645,7 @@ async def stream_llm(url: str, model: str, messages: List[Dict], temperature: fl
             tools=tools,
             session_id=session_id,
             tool_choice_none=tool_choice_none,
+            **completion_options,
         ):
             yield chunk
 
@@ -2583,7 +2654,7 @@ async def _stream_llm_inner(url: str, model: str, messages: List[Dict], temperat
                             max_tokens: int = LLMConfig.DEFAULT_MAX_TOKENS, headers: Optional[Dict] = None,
                             timeout: int = LLMConfig.STREAM_TIMEOUT, prompt_type: Optional[str] = None,
                             tools: Optional[List[Dict]] = None, session_id: Optional[str] = None,
-                            tool_choice_none: bool = False):
+                            tool_choice_none: bool = False, require_complete_response: bool = False):
     """Stream LLM responses with improved error handling.
 
     Yields SSE chunks:
@@ -2591,6 +2662,10 @@ async def _stream_llm_inner(url: str, model: str, messages: List[Dict], temperat
       - data: {"type": "tool_calls", ...}  — accumulated native tool calls (before DONE)
       - event: error                       — errors
       - data: [DONE]                       — end of stream
+
+    Complete-response mode adds a terminal confirmation for the subscription
+    Responses transport and rejects incomplete responses or unexpected EOF.
+    Other streaming transports and the default event contract are unchanged.
     """
     provider = _detect_provider(url)
     messages_copy = _sanitize_llm_messages(messages)
@@ -2734,6 +2809,16 @@ async def _stream_llm_inner(url: str, model: str, messages: List[Dict], temperat
                                 return
                             yield f'data: {json.dumps({"delta": delta})}\n\n'
                     elif evt == "response.completed":
+                        if require_complete_response:
+                            if (
+                                response_data.get("status") not in (None, "completed")
+                                or response_data.get("incomplete_details")
+                                or response_data.get("error")
+                                or data.get("error")
+                            ):
+                                yield f'event: error\ndata: {json.dumps({"status": 502, "text": "LLM did not complete the final answer"})}\n\n'
+                                return
+                            yield f'data: {json.dumps({"type": "response_complete"})}\n\n'
                         usage = (data.get("response") or {}).get("usage") or data.get("usage") or {}
                         if isinstance(usage, dict):
                             raw_input = (
@@ -2764,6 +2849,9 @@ async def _stream_llm_inner(url: str, model: str, messages: List[Dict], temperat
                                 yield f'data: {json.dumps({"type": "usage", "data": normalized_usage})}\n\n'
                         yield "data: [DONE]\n\n"
                         return
+                    elif evt == "response.incomplete" and require_complete_response:
+                        yield f'event: error\ndata: {json.dumps({"status": 502, "text": "LLM did not complete the final answer"})}\n\n'
+                        return
                     elif evt in ("response.failed", "error"):
                         err = data.get("error") or (data.get("response") or {}).get("error") or {}
                         if evt == "error" and not err:
@@ -2778,7 +2866,10 @@ async def _stream_llm_inner(url: str, model: str, messages: List[Dict], temperat
                         status = _provider_stream_error_status(err, default=400)
                         yield f'event: error\ndata: {json.dumps({"status": status, "text": text})}\n\n'
                         return
-                yield "data: [DONE]\n\n"
+                if require_complete_response:
+                    yield f'event: error\ndata: {json.dumps({"status": 502, "text": "LLM stream ended before completing the final answer"})}\n\n'
+                else:
+                    yield "data: [DONE]\n\n"
         except (httpx.ConnectError, httpx.ConnectTimeout) as e:
             _cooled = _mark_host_dead(target_url)
             _tail = f" — host cooled for {DEAD_HOST_COOLDOWN:.0f}s" if _cooled else " — transient, will retry"

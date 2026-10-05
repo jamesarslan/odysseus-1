@@ -110,6 +110,8 @@ async function _syncLibrary(options = {}) {
             sourceCount: item.source_count || existing.sourceCount || 0,
             thumbnail: item.thumbnail || existing.thumbnail || '',
             category: item.category || existing.category || '',
+            failure_stage: item.failure_stage || '',
+            failure_message: item.failure_message || '',
             _fromLibrary: true,
           };
           for (const [key, value] of Object.entries(updates)) {
@@ -128,6 +130,8 @@ async function _syncLibrary(options = {}) {
           sourceCount: item.source_count || 0,
           thumbnail: item.thumbnail || '',
           category: item.category || '',
+          failure_stage: item.failure_stage || '',
+          failure_message: item.failure_message || '',
           errorMsg: null, avgDuration: null, modelName: null,
           settings: { max_rounds: item.rounds || 8 },
           _es: null, _timerInterval: null, _fromLibrary: true,
@@ -316,6 +320,8 @@ function _connectStream(job) {
       if (d.model && !job.modelName) job.modelName = d.model;
       if (d.final) {
         if (d.error) job.errorMsg = d.error;
+        job.failure_stage = d.failure_stage || '';
+        job.failure_message = d.failure_message || '';
         _finishJob(job, d.status === 'done' ? 'done' : d.status === 'cancelled' ? 'cancelled' : 'error');
         if (d.status === 'done') _fetchResult(job);
         return;
@@ -339,6 +345,8 @@ async function _pollFallback(job) {
     job.progress = d.progress || {};
     if (d.avg_duration) job.avgDuration = d.avg_duration;
     if (d.status !== 'running') {
+      job.failure_stage = d.failure_stage || '';
+      job.failure_message = d.failure_message || '';
       _finishJob(job, d.status === 'done' ? 'done' : 'error');
       if (d.status === 'done') _fetchResult(job);
       return;
@@ -374,6 +382,8 @@ async function _fetchResult(job) {
     job.result = d.result;
     job.sources = d.sources;
     job.findings = d.raw_findings;
+    job.failure_stage = d.failure_stage || '';
+    job.failure_message = d.failure_message || '';
     if (d.category && !job.category) job.category = d.category;
     _notify();
   } catch {}

@@ -16,14 +16,13 @@ from typing import Callable, Dict, List, Optional, Set
 
 from src.research_utils import strip_thinking, is_low_quality
 
-from src.goal_based_extractor import EXTRACTOR_SYSTEM
 from src.prompt_security import untrusted_context_message
 
 logger = logging.getLogger(__name__)
 
 
 def current_date_context() -> str:
-    """Preamble that grounds query-generation/planning LLMs in the real current
+    """Preamble that grounds research LLMs in the real current
     date. Without it the model falls back to its training-cutoff year and emits
     queries like "best Python tutorials 2025" when the year is actually 2026.
     System TZ-local so it matches what the user sees. Portable strftime only."""
@@ -33,6 +32,9 @@ def current_date_context() -> str:
         f"When a search query needs a year or refers to 'latest'/'current'/"
         f"'this year', use {now.strftime('%Y')} or relative wording — never a "
         f"year inferred from training data.\n\n"
+        "Assess source publication dates relative to today's date, not your "
+        "training cutoff. A recent publication year alone does not show that "
+        "a source is future-dated or fabricated.\n\n"
     )
 
 # ---------------------------------------------------------------------------
@@ -76,6 +78,10 @@ You are a research assistant planning web searches.
 
 Generate {num_queries} focused search queries that will help answer the question.
 {round_instruction}
+Use concise keyword queries of about 3-8 content words, not full sentences.
+Preserve essential technical names and search a different sub-topic in each query.
+Do not add a year unless the question explicitly needs a date or current information.
+Do not introduce unrequested hardware, platforms, or other assumptions.
 
 Return ONLY a JSON array of query strings, nothing else.
 Example: ["query one", "query two", "query three"]
@@ -96,12 +102,21 @@ Integrate the new findings into the existing report. Produce an updated, well-or
 report that answers the original question as completely as possible given all evidence so far. \
 Remove redundancy, resolve contradictions, and maintain logical flow. \
 Keep source URLs as inline citations where relevant.
+Use only claims supported by the collected source evidence. Preserve each source's
+scope and distinguish a demonstrated configuration from a general requirement.
+Do not invent hardware minimums, software requirements, training times, or universal
+recommendations. Label inferences and unknowns explicitly. A library used in one
+example is not mandatory for all workflows. One failed synthetic-data experiment
+does not establish that all synthetic data should be avoided.
 
 Write only the updated report — no preamble or meta-commentary.
 """
 
 STOP_PROMPT = """\
 You are deciding whether a research report is comprehensive enough.
+This step evaluates coverage and support in the provided report. It does not
+verify whether a cited source exists: that requires fetching the source, and
+cannot be inferred from a title or publication year unfamiliar to you.
 
 **Original question:** {question}
 
@@ -116,8 +131,16 @@ comprehensively?  Consider:
 - Are there obvious gaps or unanswered sub-questions?
 - Is the evidence sufficient and from multiple sources?
 
+Use the authoritative current date supplied with this request. Assess coverage
+and supported claims, rather than whether a source is familiar from your training
+data. A publication newer than your training cutoff can be valid. Do not claim
+that a source is future-dated or nonexistent solely because its year is recent;
+compare its actual date with the supplied current date.
+
 If rounds completed is well below the target, prefer continuing unless the \
 report is already exhaustive.
+Explain a concrete coverage gap or why the evidence covers the question. Do not
+replace that assessment with an unsupported claim that cited sources do not exist.
 
 Reply with ONLY "YES" or "NO" followed by a brief one-sentence reason.
 Example: "YES — The report covers all major aspects with evidence from multiple sources."
@@ -143,7 +166,44 @@ Requirements:
 - Add a brief executive summary at the top
 - End with a clear conclusion that directly answers the question
 - Write in an engaging, informative style — not dry or robotic
+- Ground factual claims and recommendations in the cited evidence; preserve the scope of each source
+- Distinguish examples from requirements, sequential device handoffs from simultaneous multi-device training, and inference from training
+- Do not invent hardware minimums, software versions, training times, or mandatory libraries; state when these are unknown
+- Label estimates and inferences explicitly, and do not generalize one experiment into a universal recommendation
+- Evidence takes priority over length or format: omit unsupported details instead of filling gaps
 """
+
+RESEARCH_EXTRACTOR_PROMPT = """\
+Extract source-grounded information from the supplied webpage for this research goal:
+{goal}
+
+First decide whether the page directly provides useful evidence for any part of
+the goal. Shared words, unrelated scientific uses of a term, and imagined
+analogies do not establish relevance. Use only information in this page; do not
+fill gaps from your own knowledge or infer hardware requirements from an example.
+Preserve qualifications and distinguish sequential hardware use from simultaneous
+training. Keep evidence concise, quoting the relevant source passages.
+
+Return a JSON object with "relevant" (a boolean), "rational", "evidence", and
+"summary". For an unrelated page, set "relevant": false and both "evidence"
+and "summary" to empty strings. For a relevant page, set "relevant": true and
+provide nonempty source evidence and a concise summary explaining how it answers
+the goal. Do not turn an explanation of irrelevance into a finding.
+"""
+
+_RESEARCH_IRRELEVANCE_MARKERS = (
+    "completely irrelevant to the research goal",
+    "completely irrelevant to the user's goal",
+    "irrelevant to the specified research goal",
+    "cannot be used to answer the research goal",
+    "zero overlap with the topic",
+)
+
+
+def _unusable_research_text(text: str) -> bool:
+    return is_low_quality(text) or any(
+        marker in text.lower() for marker in _RESEARCH_IRRELEVANCE_MARKERS
+    )
 
 CATEGORY_PROMPTS = {
     "product": """IMPORTANT FORMAT OVERRIDE — this is a PRODUCT research report:
@@ -167,7 +227,7 @@ CATEGORY_PROMPTS = {
 - Each step should have a clear heading and detailed instructions
 - Use blockquotes (> ) for tips and warnings: > **Tip:** ... or > **Warning:** ...
 - End with ## Common Mistakes section
-- Add estimated time and difficulty level near the top""",
+- Add estimated time and difficulty only when supported by the evidence; otherwise state that they depend on the workload""",
 
     "factcheck": """IMPORTANT FORMAT OVERRIDE — this is a FACT-CHECK report:
 - Start with ## The Claim restating what's being checked
@@ -241,6 +301,9 @@ class DeepResearcher:
         self.findings: List[Dict] = []
         self.evolving_report: str = ""
         self.research_plan: str = ""
+        self.failure_stage: str = ""
+        self.failure_message: str = ""
+        self._search_errors: List[str] = []
 
     def cancel(self):
         """Request cooperative cancellation of the research loop."""
@@ -304,6 +367,11 @@ class DeepResearcher:
             queries = await self._generate_queries(question, report, round_num)
             if not queries:
                 logger.warning(f"Round {round_num}: no queries generated, stopping")
+                if not findings:
+                    self._set_failure(
+                        "query_generation",
+                        "Research could not generate search queries. Check the research model and try again.",
+                    )
                 break
 
             self._emit(phase="searching", round=round_num, queries=len(queries),
@@ -324,15 +392,9 @@ class DeepResearcher:
                 consecutive_empty_rounds += 1
                 logger.info(f"Round {round_num}: no new findings ({consecutive_empty_rounds} consecutive empty)")
                 if consecutive_empty_rounds >= self.max_empty_rounds:
-                    logger.warning(f"Search appears to be down — {self.max_empty_rounds} consecutive rounds with no results")
-                    err_detail = getattr(self, '_last_search_error', 'unknown error')
-                    self._emit(phase="error", message=f"Search engine unavailable: {err_detail}")
+                    logger.warning(f"Research gathered no new evidence in {self.max_empty_rounds} consecutive rounds")
                     if not findings:
-                        return (
-                            f"**Search unavailable** — Web search failed after "
-                            f"{round_num} rounds. Error: {err_detail}\n\n"
-                            "Please check your search provider settings and ensure the service is running."
-                        )
+                        return self._no_evidence_report()
                     break
 
             # SYNTHESIZE
@@ -363,7 +425,7 @@ class DeepResearcher:
                     "finding(s) as a fallback", len(findings)
                 )
                 return self._fallback_report(question, findings)
-            return "No information could be gathered for this question."
+            return self._no_evidence_report()
 
         self.evolving_report = report  # preserve pre-synthesis report
         final = await self._final_report(question, report)
@@ -379,17 +441,21 @@ class DeepResearcher:
     # LLM helper
     # ------------------------------------------------------------------
     async def _llm(self, messages: List[Dict], temperature: float = 0.3,
-                   max_tokens: int = 4096, timeout: int = 60) -> str:
-        """Call the LLM asynchronously and strip thinking tags."""
+                   max_tokens: int = 4096, timeout: int = 60,
+                   enable_thinking: Optional[bool] = None) -> str:
+        """Ground every research call in the current date and require final text."""
         from src.llm_core import llm_call_async
+        thinking_options = {"enable_thinking": enable_thinking} if enable_thinking is not None else {}
         response = await llm_call_async(
             url=self.llm_endpoint,
             model=self.llm_model,
-            messages=messages,
+            messages=[{"role": "system", "content": current_date_context()}] + messages,
             temperature=temperature,
             max_tokens=max_tokens,
             headers=self.llm_headers,
             timeout=timeout,
+            require_complete_response=True,
+            **thinking_options,
         )
         return strip_thinking(response)
 
@@ -405,6 +471,7 @@ class DeepResearcher:
                 temperature=0.3,
                 max_tokens=1024,
                 timeout=getattr(self, "planning_timeout", 90),
+                enable_thinking=False,
             )
             # Try to parse as JSON for structured plan
             parsed = self._parse_json_object(response)
@@ -437,6 +504,7 @@ class DeepResearcher:
             result = await self._llm(
                 [{"role": "user", "content": prompt}],
                 temperature=0, max_tokens=20, timeout=15,
+                enable_thinking=False,
             )
             cat = (result or "").strip().lower()
             # Clean one-word answer first.
@@ -489,6 +557,7 @@ class DeepResearcher:
                 temperature=0.5,
                 max_tokens=4096,
                 timeout=getattr(self, "query_timeout", 120),
+                enable_thinking=False,
             )
             queries = self._parse_json_array(response)
             # Deduplicate
@@ -515,23 +584,36 @@ class DeepResearcher:
 
         # Collect URLs to fetch from all search results
         urls_to_fetch = []
+        url_limit = self.max_urls_per_round * len(queries)
+        result_iterators = []
         for result in search_results:
             if isinstance(result, Exception):
                 logger.warning(f"Search error: {result}")
                 continue
             if not result:
                 continue
-            for r in result:
-                url = r.get("url", "")
-                if url and url not in self.urls_fetched:
+            result_iterators.append(iter(result))
+
+        # Take one new URL per query in each pass so an early query's results
+        # cannot consume the whole budget and hide later research sub-topics.
+        while result_iterators and len(urls_to_fetch) < url_limit:
+            remaining_iterators = []
+            for result_iterator in result_iterators:
+                if len(urls_to_fetch) >= url_limit:
+                    break
+                for r in result_iterator:
+                    url = r.get("url", "")
+                    if not url or url in self.urls_fetched:
+                        continue
                     urls_to_fetch.append(r)
                     self.urls_fetched.add(url)
                     self.analyzed_urls.append({
                         "url": url,
                         "title": r.get("title", "") or url,
                     })
-                if len(urls_to_fetch) >= self.max_urls_per_round * len(queries):
+                    remaining_iterators.append(result_iterator)
                     break
+            result_iterators = remaining_iterators
 
         if self._cancelled or self._time_exceeded():
             return all_findings
@@ -576,7 +658,7 @@ class DeepResearcher:
 
             # Try primary provider, then fallbacks
             chain = _build_provider_chain(provider)
-            raised = False
+            errors = []
             for prov in chain:
                 try:
                     results = await asyncio.to_thread(_call_provider, prov, query, 10)
@@ -586,24 +668,27 @@ class DeepResearcher:
                             self.providers_used.append(prov)
                         return results
                 except Exception as e:
-                    raised = True
                     logger.warning(f"Research search: {prov} failed: {e}")
-                    self._last_search_error = f"{prov}: {e}"
+                    errors.append(f"{prov}: {str(e)[:600]}")
             # Every provider ran but none returned results. If none of them
             # raised, record an actionable reason here — otherwise this empty
             # path leaves `_last_search_error` unset and the caller surfaces a
             # bare "unknown error" (issue #344). This is exactly the SearXNG
             # case where the service is reachable but all its engines fail, so
             # each provider returns [] without throwing.
-            if not raised:
+            if errors:
+                self._last_search_error = "; ".join(errors)[:1200]
+            else:
                 self._last_search_error = (
                     f"no results from search provider(s): "
                     f"{', '.join(chain) if chain else provider}"
                 )
+            self._remember_search_error(self._last_search_error)
             return []
         except Exception as e:
             logger.error(f"Search failed for '{query}': {e}")
             self._last_search_error = str(e)
+            self._remember_search_error(self._last_search_error)
             return []
 
     async def _fetch_and_extract(self, url: str, question: str,
@@ -635,24 +720,39 @@ class DeepResearcher:
         try:
             response = await self._llm(
                 [
-                    {"role": "user", "content": EXTRACTOR_SYSTEM.format(goal=question)},
+                    {"role": "user", "content": RESEARCH_EXTRACTOR_PROMPT.format(goal=question)},
                     untrusted_context_message("webpage", content),
                 ],
                 temperature=0.2,
                 max_tokens=2048,
                 timeout=self.extraction_timeout,
+                enable_thinking=False,
             )
+            if not response.strip():
+                logger.warning(f"LLM extraction returned no evidence for {url}")
+                return None
             parsed = self._parse_json_object(response)
-            if parsed:
+            if parsed is not None:
+                if (not isinstance(parsed, dict)
+                        or ("relevant" in parsed and not isinstance(parsed["relevant"], bool))
+                        or parsed.get("relevant") is False):
+                    logger.info(f"Skipping irrelevant extraction from {url}")
+                    return None
+                summary = parsed.get("summary", "")
+                evidence = parsed.get("evidence", "")
+                if (not isinstance(summary, str) or not summary.strip()
+                        or not isinstance(evidence, str) or not evidence.strip()
+                        or _unusable_research_text(summary)):
+                    logger.info(f"Skipping empty or low-quality extraction from {url}")
+                    return None
                 parsed["url"] = url
                 parsed["title"] = title or page.get("title", "")
                 parsed["og_image"] = page.get("og_image", "")
-                # Skip findings where the LLM says the page is useless
-                if is_low_quality(parsed.get("summary", "")):
-                    logger.info(f"Skipping low-quality extraction from {url}")
-                    return None
                 return parsed
             # If JSON parsing fails, treat entire response as evidence
+            if _unusable_research_text(response):
+                logger.info(f"Skipping low-quality raw extraction from {url}")
+                return None
             return {
                 "url": url,
                 "title": title or page.get("title", ""),
@@ -705,7 +805,7 @@ class DeepResearcher:
     async def _should_stop(self, question: str, report: str,
                            round_num: int) -> bool:
         """Let the LLM decide whether the report is comprehensive enough."""
-        prompt = STOP_PROMPT.format(
+        prompt = current_date_context() + STOP_PROMPT.format(
             question=question,
             report=report,
             round_num=round_num,
@@ -717,6 +817,7 @@ class DeepResearcher:
                 [{"role": "user", "content": prompt}],
                 temperature=0.1,
                 max_tokens=128,
+                enable_thinking=False,
             )
             # Reasoning models prepend a <think>...</think> block — strip it
             # before checking for YES/NO, otherwise the answer always looks
@@ -766,7 +867,9 @@ class DeepResearcher:
                             "- Include specific data, numbers, and comparisons from the evidence\n"
                             "- Explain context and significance — don't just list facts\n"
                             "- Use ## headings and ### subheadings\n"
-                            "- Target at least 1000 words\n"
+                            "- Ground every added claim in the collected evidence; do not invent requirements, estimates, or recommendations to reach a word count\n"
+                            "- Clearly label unknowns and inferences\n"
+                            "- Target at least 1000 words only if the evidence supports that detail\n"
                             "Write the full expanded report now."
                         },
                     ],
@@ -785,6 +888,44 @@ class DeepResearcher:
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+    def _no_evidence_report(self) -> str:
+        """Preserve the failure stage at any exit without gathered evidence."""
+        if self.failure_message:
+            return f"**Research failed** — {self.failure_message}"
+        if self.urls_fetched:
+            self._set_failure(
+                "extraction",
+                "Research found pages, but none could be read or produced useful evidence. "
+                "Check page access and the research model output.",
+            )
+            return f"**No usable evidence** — {self.failure_message}"
+        errors = self._search_errors or [getattr(self, "_last_search_error", "")]
+        detail = "; ".join(error for error in errors if error)[:1200]
+        rounds = self.round_count
+        message = f"Web search returned no pages after {rounds} {'round' if rounds == 1 else 'rounds'}."
+        if detail:
+            message += " " + detail
+        self._set_failure("search", message)
+        return (
+            f"**Search unavailable** — {self.failure_message}\n\n"
+            "Check the search provider settings or try a working search engine."
+        )
+
+    def _remember_search_error(self, detail: str):
+        errors = getattr(self, "_search_errors", None)
+        if errors is None:
+            errors = self._search_errors = []
+        if detail and detail not in errors and len(errors) < 8:
+            errors.append(detail[:1200])
+
+    def _set_failure(self, stage: str, message: str):
+        self.failure_stage = stage
+        self.failure_message = message[:1600]
+        self._emit(
+            phase="error", message=self.failure_message,
+            failure_stage=self.failure_stage, failure_message=self.failure_message,
+        )
+
     def _emit(self, **kwargs):
         """Send a progress event via the callback, if one is registered."""
         if self._progress:
