@@ -1,0 +1,226 @@
+{
+  "public_head": "956bfdff",
+  "app_base": "http://127.0.0.1:7001",
+  "authenticated_browser": true,
+  "successful_job": "rp-7e13f053d74c",
+  "failed_job": "rp-5344aa40a0f9",
+  "captures": [
+    {
+      "file": "desktop-research-success-and-search-failure.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "mobile": false
+      },
+      "validation": {
+        "success": {
+          "done": true,
+          "failed": false,
+          "meta": "5:43 -- 4 sources",
+          "failure_note": false,
+          "source_count": 4,
+          "findings": 4,
+          "urls_analyzed": 10,
+          "failure_stage": ""
+        },
+        "failed": {
+          "badge": "search failed",
+          "note": "Web search failed after 2 rounds. Error: no results from search provider(s): searxng, duckduckgo"
+        },
+        "horizontal_overflow": false
+      }
+    },
+    {
+      "file": "mobile-research-success-and-search-failure.png",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "mobile": true
+      },
+      "validation": {
+        "success": {
+          "done": true,
+          "failed": false,
+          "meta": "5:43 -- 4 sources",
+          "failure_note": false,
+          "source_count": 4,
+          "findings": 4,
+          "urls_analyzed": 10,
+          "failure_stage": ""
+        },
+        "failed": {
+          "badge": "search failed",
+          "note": "Web search failed after 2 rounds. Error: no results from search provider(s): searxng, duckduckgo"
+        },
+        "horizontal_overflow": false
+      }
+    },
+    {
+      "file": "desktop-research-report.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "mobile": false
+      },
+      "validation": {
+        "sources_summary": "Sources (4)",
+        "source_links": 4,
+        "report_text_chars": 12493,
+        "horizontal_overflow": false
+      }
+    },
+    {
+      "file": "desktop-research-report-sources.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "mobile": false
+      },
+      "validation": {
+        "sources": 4
+      }
+    },
+    {
+      "file": "mobile-research-report.png",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "mobile": true
+      },
+      "validation": {
+        "sources_summary": "Sources (4)",
+        "source_links": 4,
+        "report_text_chars": 12493,
+        "horizontal_overflow": false
+      }
+    },
+    {
+      "file": "mobile-research-report-sources.png",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "mobile": true
+      },
+      "validation": {
+        "sources": 4
+      }
+    }
+  ],
+  "privacy": "Unrelated app surfaces, other research cards, account controls and model labels hidden only for screenshots.",
+  "validated_at": "2026-10-05T21:10:02.954714+00:00",
+  "privacy_review": "All captures visually inspected; only public research questions/reports and the labelled controlled fixture are visible. Private chat, account, unrelated report and model-name UI hidden for captures.",
+  "failure_captures": [
+    {
+      "file": "desktop-research-search-failure.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "mobile": false
+      },
+      "validation": {
+        "badge": "search failed",
+        "note": "Web search failed after 2 rounds. Error: no results from search provider(s): searxng, duckduckgo",
+        "meta": "1:43 -- 0 sources"
+      }
+    },
+    {
+      "file": "mobile-research-search-failure.png",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "mobile": true
+      },
+      "validation": {
+        "badge": "search failed",
+        "note": "Web search failed after 2 rounds. Error: no results from search provider(s): searxng, duckduckgo",
+        "meta": "1:43 -- 0 sources"
+      }
+    },
+    {
+      "file": "desktop-research-extraction-failure.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "mobile": false
+      },
+      "fixture": true,
+      "validation": {
+        "badge": "extraction failed",
+        "note": "Research found pages, but none could be read or produced useful evidence. Check page access and the research model output.",
+        "meta": "0:00 -- 0 sources"
+      }
+    },
+    {
+      "file": "mobile-research-extraction-failure.png",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "mobile": true
+      },
+      "fixture": true,
+      "validation": {
+        "badge": "extraction failed",
+        "note": "Research found pages, but none could be read or produced useful evidence. Check page access and the research model output.",
+        "meta": "0:00 -- 0 sources"
+      }
+    }
+  ],
+  "extraction_fixture": {
+    "job": "rp-accept-extraction",
+    "controlled": true,
+    "real_public_head_pipeline": true,
+    "simulated_extraction_failure": true
+  },
+  "artifact_integrity": [
+    {
+      "file": "desktop-research-extraction-failure.png",
+      "bytes": 25676,
+      "sha256": "0701a328c8503e262f8203676b713a511d2331cf1e7de1a2eee49c0cae90f335"
+    },
+    {
+      "file": "desktop-research-report-sources.png",
+      "bytes": 236978,
+      "sha256": "2be5da8cd6168cfa1c0d97af62dc4c025f0b8bc3fc534c38318215bffff2ad73"
+    },
+    {
+      "file": "desktop-research-report.png",
+      "bytes": 378478,
+      "sha256": "2e25655ef37a8d7b58dd3b64751afca502f2727045ebaddf296a709a71af4c0f"
+    },
+    {
+      "file": "desktop-research-search-failure.png",
+      "bytes": 25733,
+      "sha256": "9e24357ec2220a21a1140d5437fdfa561e00252ef26c444d51940dcf556b8b4a"
+    },
+    {
+      "file": "desktop-research-success-and-search-failure.png",
+      "bytes": 37423,
+      "sha256": "b3a197b9b6e8e73bb377e3db6a158f39ad3b8ad0ed6428c2dd14c69b9b3b7a35"
+    },
+    {
+      "file": "mobile-research-extraction-failure.png",
+      "bytes": 25529,
+      "sha256": "4232a37ddc33294d19c17e7995ca0b30582d885111aac9e41a301980c30bcd37"
+    },
+    {
+      "file": "mobile-research-report-sources.png",
+      "bytes": 89896,
+      "sha256": "6f8c40bcc0b437a022ec2002f558efd525dd6572dbda7a1926d21694a76ee36b"
+    },
+    {
+      "file": "mobile-research-report.png",
+      "bytes": 120363,
+      "sha256": "941402c11e43bce7c5c2ef0b66e100ce47226936ede620757781409c4f5236d7"
+    },
+    {
+      "file": "mobile-research-search-failure.png",
+      "bytes": 25115,
+      "sha256": "fa2d88fdd9e277c7e68e593cb13a37f4e81b885c421c3cba56e0c991ec727877"
+    },
+    {
+      "file": "mobile-research-success-and-search-failure.png",
+      "bytes": 33813,
+      "sha256": "f6774c512a043c896117274e4b93865c0212e3e02e94cb05f2d4afcf92a96428"
+    }
+  ]
+}
