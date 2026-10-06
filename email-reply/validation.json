@@ -272,5 +272,62 @@
   ],
   "no_send_attempts": true,
   "privacy": "Fresh synthetic data only; background chat and model controls hidden for cropped UI captures.",
-  "validated_at": "2026-10-06T08:19:42.325Z"
+  "validated_at": "2026-10-06T08:19:42.325Z",
+  "privacy_reviewed": true,
+  "recommended_public_captures": [
+    "desktop-editor-typed-reply.png",
+    "mobile-editor-typed-reply.png"
+  ],
+  "artifact_integrity": [
+    {
+      "file": "desktop-edited-draft-kept.png",
+      "bytes": 36189,
+      "sha256": "9cfce0179ded9c0d4963168a35b8285eb08c6c76198f61b8c8bd0feb9af6f362"
+    },
+    {
+      "file": "desktop-editor-context-reply.png",
+      "bytes": 38333,
+      "sha256": "8fca717504764f473a4f25a751e3c29790316a25f2a1c642c36a1cc0778d7f23"
+    },
+    {
+      "file": "desktop-editor-typed-reply.png",
+      "bytes": 38576,
+      "sha256": "a6ffe5c0be4dea5964456e6935c77c3d2adcfd2caab985ef14e6bef51b4f157f"
+    },
+    {
+      "file": "desktop-invalid-status-draft-kept.png",
+      "bytes": 39103,
+      "sha256": "38fa38d7431772a5913d3cb89dda699a0d119cbcc6bc8e60eaaba12b5a4f7d82"
+    },
+    {
+      "file": "desktop-reader-ai-reply.png",
+      "bytes": 42185,
+      "sha256": "9507c473b6d645acdbeea36c3906ff37943f2fb95759c8c4b80778c3eeeb4f0b"
+    },
+    {
+      "file": "mobile-edited-draft-kept.png",
+      "bytes": 30075,
+      "sha256": "4dd3b35d4d0d64e4af0703069c278f6b11adb0194217cdb512f7dee0c0774cbb"
+    },
+    {
+      "file": "mobile-editor-context-reply.png",
+      "bytes": 32441,
+      "sha256": "e66bb144082e28bed0b9ae77df2ceb8189c4289bdcf83dfda4197d14c96a73d3"
+    },
+    {
+      "file": "mobile-editor-typed-reply.png",
+      "bytes": 32440,
+      "sha256": "d3dace9b1db141239b960af253bbb209cc0fc3073f49e0ddbac7666ff6f94f99"
+    },
+    {
+      "file": "mobile-invalid-status-draft-kept.png",
+      "bytes": 30107,
+      "sha256": "495c039e2fe18a2ab612ed85f4549a70515453de090af121eb98e5c60ec4f6ce"
+    },
+    {
+      "file": "mobile-reader-ai-reply.png",
+      "bytes": 32445,
+      "sha256": "1c427f62138caba092a885a6f11fdb8c99506879bd68fb80b48ebb3422623968"
+    }
+  ]
 }
