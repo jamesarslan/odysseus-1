@@ -2593,10 +2593,10 @@ async def llm_call_async(
     workload: str = "foreground",
     availability_only_transport: bool = False,
     return_model_metadata: bool = False,
-    require_complete_response: bool = False,
-    enable_thinking: Optional[bool] = None,
     thinking_mode: Optional[str] = None,
     reasoning_effort: Optional[str] = None,
+    require_complete_response: bool = False,
+    enable_thinking: Optional[bool] = None,
 ) -> str | tuple[str, str]:
     """Call an LLM with connection pooling, retries, and response caching.
 
@@ -2982,8 +2982,8 @@ async def stream_llm(url: str, model: str, messages: List[Dict], temperature: fl
                      timeout: int = LLMConfig.STREAM_TIMEOUT, prompt_type: Optional[str] = None,
                      tools: Optional[List[Dict]] = None, session_id: Optional[str] = None,
                      tool_choice_none: bool = False, workload: str = "foreground",
-                     require_complete_response: bool = False,
-                     thinking_mode: Optional[str] = None, reasoning_effort: Optional[str] = None):
+                     thinking_mode: Optional[str] = None, reasoning_effort: Optional[str] = None,
+                     require_complete_response: bool = False):
     target_url = _stream_target_url(url)
     completion_options = {"require_complete_response": True} if require_complete_response else {}
     completed = False
@@ -3030,10 +3030,10 @@ async def _stream_llm_inner(url: str, model: str, messages: List[Dict], temperat
                             max_tokens: int = LLMConfig.DEFAULT_MAX_TOKENS, headers: Optional[Dict] = None,
                             timeout: int = LLMConfig.STREAM_TIMEOUT, prompt_type: Optional[str] = None,
                             tools: Optional[List[Dict]] = None, session_id: Optional[str] = None,
-                            tool_choice_none: bool = False, require_complete_response: bool = False,
-                            thinking_mode: Optional[str] = None,
+                            tool_choice_none: bool = False, thinking_mode: Optional[str] = None,
                             reasoning_effort: Optional[str] = None,
-                            _retry_silent_local: bool = True):
+                            _retry_silent_local: bool = True,
+                            require_complete_response: bool = False):
     """Stream LLM responses with improved error handling.
 
     Yields SSE chunks:

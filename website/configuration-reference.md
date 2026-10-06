@@ -60,10 +60,10 @@ The source tree reads **117** `ODYSSEUS_*` variables: 81 an operator may want to
 |---|---|---|---|
 | `ODYSSEUS_COPILOT_API_VERSION` | `'2026-06-01'` | `src/copilot.py:39` | Dated API-version header the Copilot models and chat endpoints require. |
 | `ODYSSEUS_COPILOT_CLIENT_ID` | `'01ab8ac9400c4e429b23'` | `src/copilot.py:34` | GitHub OAuth client id for the Copilot device flow. The default is the public VS Code client id; override it only with your own allow-listed app. |
-| `ODYSSEUS_DEEPSEEK_REASONING_EFFORT` | `'high'` | `src/llm_core.py:1727` | Reasoning effort for DeepSeek. Only `high` and `max` are accepted; any other value falls back to the default. |
+| `ODYSSEUS_DEEPSEEK_REASONING_EFFORT` | `'high'` | `src/llm_core.py:1738` | Reasoning effort for DeepSeek. Only `high` and `max` are accepted; any other value falls back to the default. |
 | `ODYSSEUS_FIRST_TOKEN_TIMEOUT` | `''` | `src/llm_core.py:223` | Seconds to wait for the first streamed token from a local endpoint before failing. Unset keeps the generous read timeout, which makes a stalled backend look like a hung agent. |
 | `ODYSSEUS_LOCAL_MODEL_GATE` | `'true'` | `src/llm_core.py:95` | On by default. Set 0, false, no or off to drop the gate that checks a local endpoint before routing a request to it. |
-| `ODYSSEUS_MISTRAL_REASONING_EFFORT` | `'high'` | `src/llm_core.py:1723` | Reasoning effort sent to Mistral thinking-capable models. The API accepts high, medium, low and none. |
+| `ODYSSEUS_MISTRAL_REASONING_EFFORT` | `'high'` | `src/llm_core.py:1734` | Reasoning effort sent to Mistral thinking-capable models. The API accepts high, medium, low and none. |
 | `ODYSSEUS_MLX_IMAGE_VLM_MODEL` | *unset* | `scripts/mlx_image_server.py:299` | Vision-language model id for the MLX image server script. Required unless `--vlm-model` is passed on the command line. |
 | `ODYSSEUS_QWEN_ROUTE_THINKING` | `'auto'` | `src/agent_loop.py:182` | Thinking policy for the Qwen routing step. An unrecognized value falls back to `auto`. |
 
@@ -191,7 +191,7 @@ Listed for completeness. Setting one of these on a real install is either a no-o
 | `ODYSSEUS_COPILOT_EDITOR_VERSION` | `'Odysseus/1.0'` | `src/copilot.py:54` | Editor-version header presented to the Copilot API. Kept stable on purpose. |
 | `ODYSSEUS_COPILOT_INTEGRATION_ID` | `'vscode-chat'` | `src/copilot.py:51` | Integration id presented to the Copilot API. Kept stable on purpose. |
 | `ODYSSEUS_COPILOT_USER_AGENT` | `'Odysseus/1.0'` | `src/copilot.py:48` | Editor-like User-Agent presented to the Copilot API. Kept stable on purpose. |
-| `ODYSSEUS_DEBUG_LLM_SHAPE` | `''` | `src/llm_core.py:3552` (+1 more) | Truthy logs the shape of streamed provider chunks. Debugging aid for provider response parsing. |
+| `ODYSSEUS_DEBUG_LLM_SHAPE` | `''` | `src/llm_core.py:3693` (+1 more) | Truthy logs the shape of streamed provider chunks. Debugging aid for provider response parsing. |
 
 ### Agent loop and tool execution
 

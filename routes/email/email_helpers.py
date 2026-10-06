@@ -403,62 +403,6 @@ def _extract_reply(text: str) -> str:
     return _strip_think(t).strip()
 
 
-def _extract_ai_reply(text: str, *, user_hint: str = "", current_draft: str = "") -> str:
-    """Keep a finished reply, never a summary, planning transcript or status."""
-    if not isinstance(text, str):
-        return ""
-    # Remove reasoning before looking for final-answer markers. A draft quoted
-    # inside a thought block is not the model's final answer.
-    clean = _strip_think(text).strip()
-    opening = re.search(r"<<<\s*REPLY\s*>>+", clean, re.I)
-    if opening:
-        rest = clean[opening.end():]
-        closing = _REPLY_CLOSE_RE.search(rest)
-        if not closing:
-            return ""
-        clean = rest[:closing.start()].strip()
-    elif _REPLY_OPEN_RE.search(clean) or _REPLY_CLOSE_RE.search(clean):
-        return ""
-    if _REPLY_ROLE_MARKER_RE.search(clean):
-        return ""
-    if not opening:
-        lines = clean.splitlines()
-        first_role = lines[0].partition(":")[0].strip().lower() if lines else ""
-        if first_role in {"system", "user", "assistant"}:
-            roles = {line.partition(":")[0].strip().lower() for line in lines}
-            if "assistant" in roles and roles.intersection({"system", "user"}):
-                return ""
-    clean = _strip_think(clean).strip()
-    if not clean:
-        return ""
-    # Conservative opening checks preserve normal email prose such as
-    # "I was thinking we could meet Thursday" and "The work is done."
-    if re.search(
-        r"(?i)^\s*(?:the user (?:wants|asks|requested) (?:a|an|the) "
-        r"(?:(?:short|concise|brief|polished|email)\s+)?(?:reply|response|email|draft)\b|thinking process\s*:|"
-        r"(?:analysis|reasoning|thinking)\s*:\s*(?:I\b|we\b|the user\b|need\b|let['’]?s\b)|"
-        r"(?:writing style|identity rule)(?: to match| requires|\s*[-—])?\s*:|"
-        r"(?:let me|i need to) (?:draft|generate|write) (?:a|the|an) (?:email|reply)\b)",
-        clean,
-    ):
-        return ""
-    status = re.fullmatch(r"(done|completed|finished|drafted|drafting|ready)[.!…\s]*", clean, re.I)
-    if status:
-        word = status.group(1)
-        literal_draft = not user_hint.strip() and current_draft.strip().lower().rstrip(".!…") == word.lower()
-        literal_request = not re.search(
-            rf"\b(?:do not|don't|never|avoid)\b[^.;\n]{{0,60}}\b{re.escape(word)}\b", user_hint, re.I,
-        ) and re.search(
-            rf"(?:\b(?:say|reply|respond|answer|write|return|output)\s+"
-            rf"(?:(?:with|only|just|exactly|the (?:word|text))\s+)*[\"'“]?{re.escape(word)}\b|"
-            rf"^(?:just|only)\s*[:,-]?\s*[\"'“]?{re.escape(word)}\b)", user_hint, re.I,
-        )
-        if not literal_draft and not literal_request:
-            return ""
-    return clean
-
-
-
 def _build_email_summary_messages(sender: str, subject: str, body_for_llm: str) -> list[dict[str, str]]:
     return [
         {
@@ -2150,6 +2094,62 @@ def _pre_retrieve_context(
         logger.warning(f"Pre-retrieval failed: {e}")
     logger.info(f"Pre-retrieval snippets={len(context_snippets)}")
     return context_snippets, terms_list
+
+
+def _extract_ai_reply(text: str, *, user_hint: str = "", current_draft: str = "") -> str:
+    """Keep a finished reply, never a summary, planning transcript or status."""
+    if not isinstance(text, str):
+        return ""
+    # Remove reasoning before looking for final-answer markers. A draft quoted
+    # inside a thought block is not the model's final answer.
+    clean = _strip_think(text).strip()
+    opening = re.search(r"<<<\s*REPLY\s*>>+", clean, re.I)
+    if opening:
+        rest = clean[opening.end():]
+        closing = _REPLY_CLOSE_RE.search(rest)
+        if not closing:
+            return ""
+        clean = rest[:closing.start()].strip()
+    elif _REPLY_OPEN_RE.search(clean) or _REPLY_CLOSE_RE.search(clean):
+        return ""
+    if _REPLY_ROLE_MARKER_RE.search(clean):
+        return ""
+    if not opening:
+        lines = clean.splitlines()
+        first_role = lines[0].partition(":")[0].strip().lower() if lines else ""
+        if first_role in {"system", "user", "assistant"}:
+            roles = {line.partition(":")[0].strip().lower() for line in lines}
+            if "assistant" in roles and roles.intersection({"system", "user"}):
+                return ""
+    clean = _strip_think(clean).strip()
+    if not clean:
+        return ""
+    # Conservative opening checks preserve normal email prose such as
+    # "I was thinking we could meet Thursday" and "The work is done."
+    if re.search(
+        r"(?i)^\s*(?:the user (?:wants|asks|requested) (?:a|an|the) "
+        r"(?:(?:short|concise|brief|polished|email)\s+)?(?:reply|response|email|draft)\b|thinking process\s*:|"
+        r"(?:analysis|reasoning|thinking)\s*:\s*(?:I\b|we\b|the user\b|need\b|let['’]?s\b)|"
+        r"(?:writing style|identity rule)(?: to match| requires|\s*[-—])?\s*:|"
+        r"(?:let me|i need to) (?:draft|generate|write) (?:a|the|an) (?:email|reply)\b)",
+        clean,
+    ):
+        return ""
+    status = re.fullmatch(r"(done|completed|finished|drafted|drafting|ready)[.!…\s]*", clean, re.I)
+    if status:
+        word = status.group(1)
+        literal_draft = not user_hint.strip() and current_draft.strip().lower().rstrip(".!…") == word.lower()
+        literal_request = not re.search(
+            rf"\b(?:do not|don't|never|avoid)\b[^.;\n]{{0,60}}\b{re.escape(word)}\b", user_hint, re.I,
+        ) and re.search(
+            rf"(?:\b(?:say|reply|respond|answer|write|return|output)\s+"
+            rf"(?:(?:with|only|just|exactly|the (?:word|text))\s+)*[\"'“]?{re.escape(word)}\b|"
+            rf"^(?:just|only)\s*[:,-]?\s*[\"'“]?{re.escape(word)}\b)", user_hint, re.I,
+        )
+        if not literal_draft and not literal_request:
+            return ""
+    return clean
+
 
 
 _EMAIL_REPLY_SYS_PROMPT_BASE = (
