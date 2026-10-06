@@ -21,3 +21,7 @@ Desktop and mobile screenshots were visually checked. Unrelated private chat,
 account information, other reports and model labels were hidden only for the
 captures. The report references expose only the public topic and public sources.
 `validation.json` contains viewport, API/DOM assertions and artifact hashes.
+
+Refresh after current dev integration
+
+Final PR head: e7e0112a6f323db339b6a3db87e08736116d65c0. The two research-refresh-history images and validation-refresh.json retain three actual synthetic runtime outcomes: a correctly explained empty extraction, two requested primary pages with findings/report, and one search-found PDF finding preserved after incomplete synthesis. The searched question still did not reliably retrieve the requested primary pages. Final CSS fixes failure-text overflow on mobile; before/after browser measurements cover 1440, 390 and 375px widths. Backend capture and test heads are explicitly recorded; no model research was rerun for the CSS-only change. These new files do not replace the historical screenshots/validation above.

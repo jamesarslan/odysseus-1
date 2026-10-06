@@ -1,0 +1,156 @@
+{
+  "stage": "before",
+  "cases": [
+    {
+      "name": "desktop",
+      "viewport": {
+        "width": 1440,
+        "height": 1080
+      },
+      "job_id": "rp-0e07a4d8d1b0",
+      "card": {
+        "top": 439.6875,
+        "bottom": 506.6875,
+        "left": 584,
+        "right": 1094,
+        "width": 510,
+        "height": 67
+      },
+      "note": {
+        "top": 474.6875,
+        "bottom": 501.6875,
+        "left": 649,
+        "right": 1083,
+        "width": 434,
+        "height": 27
+      },
+      "text": {
+        "top": 474.6875,
+        "bottom": 500.1875,
+        "left": 649,
+        "right": 1056.5,
+        "width": 407.5,
+        "height": 25.5
+      },
+      "collapsed_height": "67px",
+      "normal_card": {
+        "top": 297.6875,
+        "bottom": 364.6875,
+        "left": 584,
+        "right": 1094,
+        "width": 510,
+        "height": 67
+      },
+      "expanded": {
+        "display": "flex",
+        "overflow": "hidden",
+        "minHeight": "0px"
+      },
+      "document_overflow": false,
+      "visible_text": "Research found pages, but none could be read or produced useful evidence. Check page access and the research model output.",
+      "contained": true
+    },
+    {
+      "name": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 1024
+      },
+      "job_id": "rp-0e07a4d8d1b0",
+      "card": {
+        "top": 481.703125,
+        "bottom": 558.703125,
+        "left": 17,
+        "right": 371,
+        "width": 354,
+        "height": 77
+      },
+      "note": {
+        "top": 522.703125,
+        "bottom": 563.203125,
+        "left": 80,
+        "right": 362,
+        "width": 282,
+        "height": 40.5
+      },
+      "text": {
+        "top": 522.703125,
+        "bottom": 561.703125,
+        "left": 80,
+        "right": 358.015625,
+        "width": 278.015625,
+        "height": 39
+      },
+      "collapsed_height": "77px",
+      "normal_card": {
+        "top": 319.703125,
+        "bottom": 396.703125,
+        "left": 17,
+        "right": 371,
+        "width": 354,
+        "height": 77
+      },
+      "expanded": {
+        "display": "flex",
+        "overflow": "hidden",
+        "minHeight": "0px"
+      },
+      "document_overflow": false,
+      "visible_text": "Research found pages, but none could be read or produced useful evidence. Check page access and the research model output.",
+      "contained": false
+    },
+    {
+      "name": "small-mobile",
+      "viewport": {
+        "width": 375,
+        "height": 1024
+      },
+      "job_id": "rp-0e07a4d8d1b0",
+      "card": {
+        "top": 481.703125,
+        "bottom": 558.703125,
+        "left": 17,
+        "right": 356,
+        "width": 339,
+        "height": 77
+      },
+      "note": {
+        "top": 522.703125,
+        "bottom": 563.203125,
+        "left": 80,
+        "right": 347,
+        "width": 267,
+        "height": 40.5
+      },
+      "text": {
+        "top": 522.703125,
+        "bottom": 561.703125,
+        "left": 80,
+        "right": 331.09375,
+        "width": 251.09375,
+        "height": 39
+      },
+      "collapsed_height": "77px",
+      "normal_card": {
+        "top": 319.703125,
+        "bottom": 396.703125,
+        "left": 17,
+        "right": 356,
+        "width": 339,
+        "height": 77
+      },
+      "expanded": {
+        "display": "flex",
+        "overflow": "hidden",
+        "minHeight": "0px"
+      },
+      "document_overflow": false,
+      "visible_text": "Research found pages, but none could be read or produced useful evidence. Check page access and the research model output.",
+      "contained": false
+    }
+  ],
+  "assertions": "baseline measurements",
+  "source_head": "d152ac66ae01b8842f34a6d52d714296ab9c2b46",
+  "data_origin": "Three saved synthetic acceptance jobs; no private backup or new model calls",
+  "expanded_check": "Computed expanded selector rules after toggling the existing expanded-card class"
+}
