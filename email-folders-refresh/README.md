@@ -11,3 +11,5 @@ Mobile message list: mobile.png
 Detailed assertions, synthetic IMAP transcript, source and image hashes: validation.json
 
 The helper scripts contain only synthetic fixtures. No credentials, real messages, or external connections are included.
+
+Final PR head 2c653210 only refreshes generated source-line references. All runtime hashes match the browser/API capture head, and 13 generated-reference tests pass.

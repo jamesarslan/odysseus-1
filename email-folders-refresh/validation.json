@@ -147,5 +147,11 @@
     "desktop-list.png": "f3a83948acc9419555ab6672ad59df30119af90b8fab00835bc6d5125eacef9a",
     "mobile.png": "1131b1495bfe4456e28218779524dcd8fa6aeff4a9ecac0e2d95f1fb374432e2"
   },
-  "screenshots_visually_checked": true
+  "screenshots_visually_checked": true,
+  "final_head": "2c65321051da7827725d35bff6d05d1bd99065ca",
+  "runtime_matches_capture_head": true,
+  "followup_validation": {
+    "generated_reference_tests_passed": 13,
+    "scope": "Only generated source-line references changed."
+  }
 }
