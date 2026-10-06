@@ -134,6 +134,22 @@ def test_search_failed_list_reports_failure_and_closes_connection(monkeypatch):
     assert conn.calls[-1] == ("logout",)
 
 
+def test_search_explicit_folder_remains_usable_when_list_is_denied(monkeypatch):
+    conn = connect(monkeypatch, [b"LIST denied"], list_status="NO")
+    monkeypatch.setattr(es, "_indexed_search_emails", lambda *args, **kwargs: None)
+
+    results = es._search_emails("folder discovery", folders=["Known shared folder"])
+
+    assert len(results) == 1
+    assert results[0]["_folder"] == "Known shared folder"
+    assert ("select", '"Known shared folder"', True) in conn.calls
+    assert any(call[:2] == ("uid", "SEARCH") for call in conn.calls)
+    assert any(call[:2] == ("uid", "FETCH") for call in conn.calls)
+    assert conn.calls.count(("list",)) == 1
+    assert conn.calls.count(("logout",)) == 1
+    assert conn.calls[-1] == ("logout",)
+
+
 def test_sent_detection_uses_same_discovery_as_listing(monkeypatch):
     conn = connect(monkeypatch, [b'(\\Sent) "/" "[Gmail]/Gesendet"'])
 

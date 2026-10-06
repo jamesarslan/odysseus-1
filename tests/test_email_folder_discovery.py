@@ -63,6 +63,10 @@ def folder_routes(monkeypatch, tmp_path):
     monkeypatch.setattr(routes, "_imap_connect", lambda *_args, **_kwargs: conn)
     router = routes.setup_email_routes()
     endpoints = {r.path: r.endpoint for r in router.routes if "GET" in r.methods}
+    for route in router.routes:
+        if (route.path == "/api/email/delete/{uid}" and "DELETE" in route.methods
+                or route.path == "/api/email/delete-bulk" and "POST" in route.methods):
+            endpoints[route.path] = route.endpoint
     return routes, conn, scopes, endpoints
 
 
@@ -151,7 +155,7 @@ async def test_http_sent_alias_selects_discovered_mailbox_and_returns_identity(f
     result = await endpoints["/api/email/list"](
         folder="Sent", limit=1, offset=0, filter="all", from_addr=None,
         account_id="gmail", has_attachments=0, cached_only=0,
-        cache_bust=None, owner="alice",
+        cache_bust=None, date_from=None, date_to=None, refresh=0, owner="alice",
     )
     assert not result.get("error")
     assert result["folder"].startswith("[Gmail]/&")
@@ -169,3 +173,72 @@ async def test_http_search_sent_alias_selects_discovered_mailbox(folder_routes):
     assert not result.get("error")
     assert result["folder"].startswith("[Gmail]/&")
     assert ("select", f'"{result["folder"]}"', True) in conn.calls
+
+
+@pytest.fixture
+def trash_routes(folder_routes, monkeypatch):
+    routes, conn, scopes, endpoints = folder_routes
+    monkeypatch.setenv("ODYSSEUS_EMAIL_FIXTURE", "0")
+    conn.lines = [
+        rb'(\Noselect) "/" "[Gmail]"',
+        rb'() "/" "INBOX"',
+        rb'() "/" "Trash invoices"',
+        rb'(\Trash) "/" "[Gmail]/Corbeille"',
+    ]
+    monkeypatch.setattr(routes, "_assert_owns_account", lambda *_args: None)
+    monkeypatch.setattr(routes, "_resolve_current_email_uid", lambda *_args: "17")
+    monkeypatch.setattr(routes, "_uid_exists", lambda *_args: True)
+    monkeypatch.setattr(conn, "create", lambda *_args: pytest.fail("Discovered Trash must not be recreated"), raising=False)
+    index_deletes = []
+    monkeypatch.setattr(routes, "_email_index_delete", lambda *args: index_deletes.append(args))
+    return routes, conn, scopes, endpoints, index_deletes
+
+
+@pytest.mark.asyncio
+async def test_single_delete_discovers_localized_trash_before_moving(trash_routes, monkeypatch):
+    routes, conn, scopes, endpoints, index_deletes = trash_routes
+    moves = []
+
+    def move(connection, uid, dest, role=""):
+        assert connection is conn
+        moves.append((uid, dest, role))
+        return True
+
+    monkeypatch.setattr(routes, "_move_email_message", move)
+
+    result = await endpoints["/api/email/delete/{uid}"](
+        uid="17", folder="INBOX", account_id="gmail", message_id=None, owner="alice",
+    )
+
+    assert result == {"success": True}
+    assert scopes == [("gmail", "alice")]
+    assert ("select", '"INBOX"', False) in conn.calls
+    assert ("list",) in conn.calls
+    assert moves == [("17", "[Gmail]/Corbeille", "trash")]
+    assert index_deletes == [("alice", "gmail", "INBOX", "17")]
+
+
+def test_bulk_delete_discovers_localized_trash_before_moving(trash_routes, monkeypatch):
+    _, conn, scopes, endpoints, index_deletes = trash_routes
+    moves = []
+
+    def uid(command, *args):
+        assert command == "MOVE", "Discovered Trash should accept a direct move"
+        moves.append(args)
+        return "OK", []
+
+    monkeypatch.setattr(conn, "uid", uid)
+
+    result = endpoints["/api/email/delete-bulk"](
+        {"folder": "INBOX", "account_id": "gmail", "uids": ["17", "18"]}, owner="alice",
+    )
+
+    assert result == {"success": True, "deleted_uids": ["17", "18"], "failed_uids": []}
+    assert scopes == [("gmail", "alice")]
+    assert ("select", '"INBOX"', False) in conn.calls
+    assert ("list",) in conn.calls
+    assert moves == [(b"17", '"[Gmail]/Corbeille"'), (b"18", '"[Gmail]/Corbeille"')]
+    assert index_deletes == [
+        ("alice", "gmail", "INBOX", "17"),
+        ("alice", "gmail", "INBOX", "18"),
+    ]

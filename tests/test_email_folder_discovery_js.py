@@ -32,8 +32,24 @@ def _function(source, name):
     quote = None
     escaped = False
     template_depth = 0
+    line_comment = False
+    block_comment = False
     for pos in range(body, len(source)):
         char = source[pos]
+        if line_comment:
+            if char == "\n":
+                line_comment = False
+            continue
+        if block_comment:
+            if source[pos:pos + 2] == "*/":
+                block_comment = False
+            continue
+        if not quote and source[pos:pos + 2] == "//":
+            line_comment = True
+            continue
+        if not quote and source[pos:pos + 2] == "/*":
+            block_comment = True
+            continue
         if quote:
             if escaped:
                 escaped = False
@@ -62,14 +78,14 @@ def _run(scenario):
     if not node:
         pytest.skip("node on PATH is required for JavaScript behavior checks")
     inbox = (ROOT / "static/js/emailInbox.js").read_text()
-    library = (ROOT / "static/js/emailLibrary.js").read_text()
+    library = (ROOT / "static/js/emailLibrary/index.js").read_text()
     functions = "\n".join([
         *(_function(inbox, name) for name in (
             "folderRole", "folderDisplayName", "sortedFolders", "_populateFolderSelect",
         )),
         *(_function(library, name) for name in (
             "_resetEmailFoldersForAccount", "_emailFolderRole", "_loadFolders",
-            "_sentFolderName", "_crossFolderCandidates", "_deriveSearchScope", "_doSearch",
+            "_sentFolderName", "_crossFolderCandidates", "_resolveEmailFolderAlias", "_emailRowsWithFolder", "_loadEmails", "_deriveSearchScope", "_doSearch",
         )),
     ])
     script = """
@@ -103,6 +119,7 @@ def _run(scenario):
       const _libListCache = new Map();
       function _loadEmailsFresh() { reloads += 1; }
       function _renderGrid() { renders += 1; }
+      function _renderFolderPicker() {}
       function _syncUnreadWindowGlow() {}
       function _syncReminderClearButton() {}
       function _exitEmailReaderModeForList() {}
@@ -275,4 +292,91 @@ def test_delayed_role_discovery_redraws_localized_sent_messages():
       assert.equal(select.value, '[Gmail]/Gesendet');
       assert.equal(renders, 1);
       assert.equal(reloads, 0);
+    """)
+
+
+def test_account_folder_reset_reloads_new_inbox_instead_of_old_sent():
+    _run("""
+      state._libFolder = '[Gmail]/Sent Mail';
+      state._libFolders = ['INBOX', '[Gmail]/Sent Mail'];
+      state._libFolderRoles = {'[Gmail]/Sent Mail': 'sent'};
+      state._libAccountId = 'other';
+      fetch = async () => ({json: async () => ({
+        folders: ['INBOX', 'Envoyés'], roles: {INBOX: 'inbox', 'Envoyés': 'sent'},
+      })});
+      await _loadFolders({resetMissing: true});
+      assert.equal(state._libFolder, 'INBOX');
+      assert.equal(reloads, 1);
+    """)
+
+
+def test_explicit_sent_open_survives_account_reset_and_resolves_actual_folder():
+    _run("""
+      state._libFolder = '[Gmail]/Sent Mail';
+      state._libAccountId = 'other';
+      _resetEmailFoldersForAccount();
+      state._libFolder = 'Sent';
+      fetch = async () => ({json: async () => ({
+        folders: ['INBOX', 'Envoyés'], roles: {INBOX: 'inbox', 'Envoyés': 'sent'},
+      })});
+      await _loadFolders();
+      assert.equal(state._libFolder, 'Envoyés');
+      assert.equal(select.value, 'Envoyés');
+      assert.equal(reloads, 1);
+    """)
+
+
+def test_list_rows_and_cached_rows_keep_resolved_folder_identity():
+    _run("""
+      const response = {folder: 'Envoyés', emails: [{uid: '17'}, {uid: '18', folder: 'Custom'}]};
+      const rows = _emailRowsWithFolder(response, 'Sent');
+      assert.deepEqual(rows, [{uid: '17', folder: 'Envoyés'}, {uid: '18', folder: 'Custom'}]);
+      assert.deepEqual(_emailRowsWithFolder({emails: rows}, 'Sent'), rows);
+      assert.equal(response.emails[0].folder, undefined);
+    """)
+
+
+def test_list_request_resets_account_before_fetch_and_retains_wire_identity_in_cache():
+    _run("""
+      let _libLoadSeq = 0;
+      let _libRenderedViewKey = '';
+      const _LIB_INITIAL_PAGE_SIZE = 50;
+      const API_BASE = 'http://localhost';
+      const grid = {classList: {remove() {}}};
+      const originalGet = document.getElementById;
+      document.getElementById = id => id === 'email-lib-grid' ? grid : originalGet(id);
+      function _libCacheKey() { return String(state._libAccountId) + ':' + state._libFolder; }
+      function _libCacheGet(key) { return _libListCache.get(key); }
+      function _libCachePut(key, value) { _libListCache.set(key, value); }
+      function _renderEmailLoading() { return {destroy() {}}; }
+      function _setEmailSyncStatus() {}
+      function _refreshUnreadBadge() {}
+      function _refreshAccountUnreadHighlights() { return Promise.resolve(); }
+      state._libOffset = 0;
+      state._libEmails = [];
+      state._libFolder = '[Gmail]/Sent Mail';
+      state._libFolders = ['INBOX', '[Gmail]/Sent Mail'];
+      state._libFolderRoles = {'[Gmail]/Sent Mail': 'sent'};
+      state._libAccountId = 'other';
+      const urls = [];
+      fetch = async url => {
+        urls.push(new URL(url));
+        return {json: async () => ({emails: [{uid: '17'}], total: 1, folder: 'INBOX'})};
+      };
+      await _loadEmails({force: true, useCache: false});
+      assert.equal(urls[0].searchParams.get('account_id'), 'other');
+      assert.equal(urls[0].searchParams.get('folder'), 'INBOX');
+      assert.equal(state._libEmails[0].folder, 'INBOX');
+      state._libFolder = 'Sent';
+      fetch = async url => {
+        urls.push(new URL(url));
+        return {json: async () => ({emails: [{uid: '18'}], total: 1, folder: 'Envoyés'})};
+      };
+      await _loadEmails({force: true, useCache: false});
+      assert.equal(urls[1].searchParams.get('folder'), 'Sent');
+      assert.equal(state._libEmails[0].folder, 'Envoyés');
+      const calls = urls.length;
+      await _loadEmails({force: false, useCache: true});
+      assert.equal(urls.length, calls);
+      assert.equal(state._libEmails[0].folder, 'Envoyés');
     """)
