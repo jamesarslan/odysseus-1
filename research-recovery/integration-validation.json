@@ -1,0 +1,104 @@
+{
+  "base": "2cd02da7fc5d500fa86511f2a36ddb431de532c8",
+  "heads": {
+    "6504": "2c65321051da7827725d35bff6d05d1bd99065ca",
+    "6508": "e7e0112a6f323db339b6a3db87e08736116d65c0",
+    "6517": "207d91d5e1b7e3e86ff1c36721119fa1241a1a2b"
+  },
+  "pairs": [
+    {
+      "prs": [
+        6504,
+        6508
+      ],
+      "clean": true,
+      "tree": "a998464d6fdf5a5feb533e38b99aa1a49572eb02"
+    },
+    {
+      "prs": [
+        6504,
+        6517
+      ],
+      "clean": true,
+      "tree": "430cbf82372edb77e6d6c86e6c481fad60fd48d0"
+    },
+    {
+      "prs": [
+        6508,
+        6517
+      ],
+      "clean": true,
+      "tree": "caf1fa22e8c3006fa61a30da3ec85c4547abb067"
+    }
+  ],
+  "all_orders": [
+    {
+      "order": [
+        6504,
+        6508,
+        6517
+      ],
+      "clean": true,
+      "tree": "f138a7df10550762fbd0caba5aa5d0cefd92871b"
+    },
+    {
+      "order": [
+        6504,
+        6517,
+        6508
+      ],
+      "clean": true,
+      "tree": "f138a7df10550762fbd0caba5aa5d0cefd92871b"
+    },
+    {
+      "order": [
+        6508,
+        6504,
+        6517
+      ],
+      "clean": true,
+      "tree": "f138a7df10550762fbd0caba5aa5d0cefd92871b"
+    },
+    {
+      "order": [
+        6508,
+        6517,
+        6504
+      ],
+      "clean": true,
+      "tree": "f138a7df10550762fbd0caba5aa5d0cefd92871b"
+    },
+    {
+      "order": [
+        6517,
+        6504,
+        6508
+      ],
+      "clean": true,
+      "tree": "f138a7df10550762fbd0caba5aa5d0cefd92871b"
+    },
+    {
+      "order": [
+        6517,
+        6508,
+        6504
+      ],
+      "clean": true,
+      "tree": "f138a7df10550762fbd0caba5aa5d0cefd92871b"
+    }
+  ],
+  "same_tree_all_orders": true,
+  "combined_regressions": {
+    "passed": 177,
+    "skipped": 0,
+    "groups": [
+      "generated configuration references",
+      "strict/default completion",
+      "thinking controls",
+      "reply intent/cache",
+      "reply SSE",
+      "IMAP parsing/discovery"
+    ],
+    "network": "offline test container; synthetic fixtures only"
+  }
+}

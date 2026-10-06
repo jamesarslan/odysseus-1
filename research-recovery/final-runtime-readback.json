@@ -1,0 +1,36 @@
+{
+  "head": "e7e0112a6f323db339b6a3db87e08736116d65c0",
+  "runtime_restarted_on_final_head": true,
+  "loaded_source_hashes_match_final_head": true,
+  "runtime_sha256": {
+    "services/search/analytics.py": "c6686e25dd613a57034a37c6d95b677ae6e2d26f802f9318d585a03236586d04",
+    "services/search/providers.py": "2433e4521114e7dc9daa71f6809e3ad09dbfd3da45fc269e2b944d44e72890cb",
+    "src/deep_research.py": "fe0749bd6776a7f4724623a26770811038f8f3457d6796bb320004d780b83c48",
+    "src/research_handler.py": "a49eaca1ee81ec3e3d2d7907b4feb1ab4546cd54b90d34f5ce2ebf88848660ea",
+    "src/llm_core.py": "640eac9fcd17f7ec4aff467820da4459222485493f8082b3dd1cf27417615e17",
+    "routes/research/research_routes.py": "27d9231da1d04ca12360fdc24f0a7d5a689e1ba9c874ed83597d99c0ba6e4361",
+    "static/js/research/jobs.js": "5bf33f2825f4523ae0837906f024bf93ecc60541b92761ffb0596dc742213971",
+    "static/js/research/panel.js": "1b40d49adf2bb6f3801dc6d47c1ac38f78c8eab12f1360877e7e49ec52f886af"
+  },
+  "saved_jobs_readback": [
+    {
+      "id": "rp-0e07a4d8d1b0",
+      "success": true,
+      "failure_stage": "extraction",
+      "source_count": 0
+    },
+    {
+      "id": "rp-71b9f33d0151",
+      "success": true,
+      "failure_stage": "",
+      "source_count": 2
+    },
+    {
+      "id": "rp-f0b1f789b15b",
+      "success": true,
+      "failure_stage": "",
+      "source_count": 1
+    }
+  ],
+  "no_model_rerun": "Final follow-ups preserve planner/evidence behavior; positional API compatibility and collapsed-card sizing validated separately."
+}

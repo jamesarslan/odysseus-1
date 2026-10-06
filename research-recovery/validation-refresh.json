@@ -27,10 +27,10 @@
     "port": 7003,
     "loaded_head": "c6315ad0b4f6ce2df8ecffc27b46bd9b921a68e5",
     "data": "fresh synthetic SQLite/data only; no private backup",
-    "currently_running": false,
     "live_css_head": "e7e0112a6f323db339b6a3db87e08736116d65c0",
     "backend_loaded_head": "c6315ad0b4f6ce2df8ecffc27b46bd9b921a68e5",
-    "status_note": "Temporary validation app; lifecycle status is not a property of the evidence."
+    "status_note": "Temporary validation app; capture backend head is recorded above. A separate final-head restart/readback is recorded in final-runtime-readback.json.",
+    "running_at_capture": true
   },
   "runtime_outcomes": [
     {
@@ -144,5 +144,6 @@
     "before_measurements": "failure-card-layout-before.json",
     "after_measurements": "failure-card-layout-after.json"
   },
-  "evidence_note": "Screenshots and geometry use final CSS, with captured backend imports noted above. Earlier recorded actual model runs retain their own heads. No private mail/user data."
+  "evidence_note": "Screenshots and geometry use final CSS, with captured backend imports noted above. Earlier recorded actual model runs retain their own heads. No private mail/user data.",
+  "screenshots_visually_reviewed": true
 }
