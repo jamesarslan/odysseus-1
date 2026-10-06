@@ -57,6 +57,7 @@ async def replies(tmp_path, monkeypatch):
     monkeypatch.setattr(email_routes, "SCHEDULED_DB", db_path)
     monkeypatch.setattr(email_helpers, "SCHEDULED_DB", db_path)
     monkeypatch.setattr(email_routes, "_start_poller", lambda: None)
+    monkeypatch.setattr(email_routes, "_get_email_config", lambda *args, **kwargs: {"from_address": "fixture-owner@example.invalid"})
     monkeypatch.setattr(email_routes, "_load_settings", lambda: state.settings)
     monkeypatch.setattr(email_routes, "_assert_owns_account", lambda account, owner: state.ownership_checks.append((account, owner)))
     monkeypatch.setattr(email_routes, "_pre_retrieve_context", unexpected_mail_access)
@@ -401,3 +402,71 @@ def test_explicit_literal_done_is_allowed_but_negated_guidance_is_respected():
     assert _extract_ai_reply("Done", current_draft="Done.") == "Done"
     assert _extract_ai_reply("Done", user_hint="Don't say Done; confirm Thursday.") == ""
     assert _extract_ai_reply("Done", current_draft="Done", user_hint="Confirm Thursday.") == ""
+
+
+def _reply_sse(content, *, finish_reason="stop", terminated=True, reasoning=None):
+    delta = {"content": content}
+    if reasoning:
+        delta["reasoning_content"] = reasoning
+    frames = [{"choices": [{"delta": delta}]}]
+    if terminated:
+        frames.append({"choices": [{"delta": {}, "finish_reason": finish_reason}]})
+    body = "".join("data:" + json.dumps(frame) + "\n\n" for frame in frames)
+    if terminated:
+        body += "data:[DONE]\n\n"
+    return httpx.Response(200, text=body, headers={"content-type": "text/event-stream"})
+
+
+async def _stream_result(response):
+    events = []
+    async for chunk in response.body_iterator:
+        for line in chunk.splitlines():
+            if line.startswith("data:"):
+                events.append(json.loads(line[5:].strip()))
+    assert events[-1]["type"] == "result"
+    return events
+
+
+async def test_streamed_reply_preserves_guidance_and_uses_completed_artifact(replies):
+    replies.outputs.append(_reply_sse("<<<REPLY>>>Hi Fixture Sender, Thursday works for me.<<<END>>>"))
+    response = await replies.generate(stream=True, user_hint="Confirm Thursday.", current_draft="Wednesday maybe.")
+    events = await _stream_result(response)
+    result = events[-1]
+    assert result["success"] is True
+    assert result["reply"] == "Hi Fixture Sender, Thursday works for me."
+    assert replies.cached() == []
+    assert replies.requests[0]["stream"] is True
+    assert replies.requests[0]["chat_template_kwargs"]["enable_thinking"] is False
+    user_text = replies.requests[0]["messages"][1]["content"]
+    assert "Confirm Thursday." in user_text and "Wednesday maybe." in user_text
+
+
+@pytest.mark.parametrize("failure", ["length", "eof", "reasoning", "provider-error"])
+async def test_stream_failures_never_return_or_cache_a_finished_draft(replies, failure):
+    text = "<<<REPLY>>>Hi Fixture Sender, Thursday works for me.<<<END>>>"
+    if failure == "provider-error":
+        replies.outputs.append(httpx.Response(401, text="Fixture private provider detail token=secret-fixture"))
+    else:
+        replies.outputs.append(_reply_sse(
+            "" if failure == "reasoning" else text,
+            finish_reason="length" if failure == "length" else "stop",
+            terminated=failure != "eof", reasoning="Private fixture analysis",
+        ))
+    events = await _stream_result(await replies.generate(stream=True))
+    assert events[-1]["success"] is False
+    assert "reply" not in events[-1]
+    assert replies.cached() == []
+    assert "Private fixture" not in json.dumps(events)
+    assert "secret-fixture" not in json.dumps(events)
+
+
+async def test_streamed_status_is_retried_without_caching_status(replies):
+    replies.outputs.extend([
+        _reply_sse("<<<REPLY>>>Done<<<END>>>"),
+        _completion("<<<REPLY>>>Hi Fixture Sender, Thursday works for me.<<<END>>>"),
+    ])
+    result = (await _stream_result(await replies.generate(stream=True)))[-1]
+    assert result["success"] is True
+    assert result["reply"] == "Hi Fixture Sender, Thursday works for me."
+    assert replies.cached() == [("fixture-owner", result["reply"])]
+    assert len(replies.requests) == 2

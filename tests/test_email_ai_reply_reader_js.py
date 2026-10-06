@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import pytest
+import re
 
 from test_email_ai_reply_ui_js import _between, _run
 
@@ -15,7 +16,8 @@ def _reader(scenario):
     functions = "\n".join((
         _between(source, "function _cleanAiReplyText(", "let _emails ="),
         _between(source, "async function _openEmail(", "function _showEmailMenu("),
-    )).replace("import('./ui.js')", "Promise.resolve(uiModule)")
+    ))
+    functions = re.sub(r"import\('\./ui\.js(?:\?[^']*)?'\)", "Promise.resolve(uiModule)", functions)
     fixtures = r"""
       const API_BASE = '', _replySeparator = '---------- Previous message ----------';
       let _openEmailRequestSeq = 0, _currentFolder = 'INBOX';
@@ -41,6 +43,7 @@ def _reader(scenario):
       };
       async function _createEmailChat() { return 'reply-session'; }
       function _bringEmailReplyDraftToFrontOnMobile() {}
+      function _focusMobileReplyBody() {}
       function _isMyEmailAddress() { return false; }
       function _withoutMyAddresses() { return []; }
       function buildReplyAllCc() { return ''; }
@@ -135,7 +138,7 @@ def test_reader_success_signal_matches_actual_existing_draft_insertion(inserted)
 
 
 def _context(scenario):
-    source = (ROOT / "static/js/emailLibrary.js").read_text()
+    source = (ROOT / "static/js/emailLibrary/aiReply.js").read_text()
     functions = _between(source, "async function _runAiReplyFromButton(", "function _handleAiReplyButton(")
     fixtures = r"""
       const btn = {
@@ -143,9 +146,16 @@ def _context(scenario):
         closest() { return {}; }, appendChild() {},
         getBoundingClientRect() { return {left: 12, top: 100, bottom: 130}; },
       };
-      const em = {uid: '42'}, data = {_aiReplyNoteHint: hint};
+      const em = {uid: '42'}, data = {account_id: 'account-a', folder: 'INBOX'};
       let callbackResult = false;
-      const state = {_onEmailClick: async () => callbackResult};
+      const calls = [];
+      const state = {_onEmailClick: async opts => { calls.push(opts); return callbackResult; }};
+      const storage = new Map();
+      const localStorage = {
+        getItem(key) { return storage.get(key) || null; },
+        setItem(key, value) { storage.set(key, value); },
+        removeItem(key) { storage.delete(key); },
+      };
       const spinnerModule = {createWhirlpool() { return {element: {style: {}}, stop() {}}; }};
       function _snapEmailModalToLeftSidebar() {}
       function topPortalZ() { return 100; }
@@ -154,35 +164,93 @@ def _context(scenario):
       const inputHandlers = {}, menuHandlers = {};
       const noteInput = {value: '', focus() {}, addEventListener(name, callback) { inputHandlers[name] = callback; }};
       const menu = {
-        style: {}, className: '', innerHTML: '', remove() {}, contains() { return false; },
+        style: {}, dataset: {}, className: '', innerHTML: '', remove() { openMenus = []; }, contains() { return false; },
         querySelector() { return noteInput; },
         addEventListener(name, callback) { menuHandlers[name] = callback; },
       };
+      let openMenus = [];
       const document = {
-        querySelectorAll() { return []; }, createElement() { return menu; },
-        removeEventListener() {}, addEventListener() {}, body: {appendChild() {}},
+        querySelectorAll() { return openMenus; }, createElement() { return menu; },
+        removeEventListener() {}, addEventListener() {}, body: {appendChild() { openMenus = [menu]; }},
       };
+      async function submit() {
+        await menuHandlers.click({
+          target: {closest() { return {getAttribute() { return 'ai-reply-fast'; }}; }},
+          preventDefault() {}, stopPropagation() {},
+        });
+      }
+
     """
     _run(scenario, functions, fixtures)
 
 
 def test_reader_context_note_survives_failed_attempt_and_is_prefilled():
     _context(r"""
-      assert.equal(await _runAiReplyFromButton(btn, em, data, 'ai-reply-fast', hint), false);
-      assert.equal(data._aiReplyNoteHint, hint);
+      const key = _aiReplyContextDraftKey(em, data);
+      _saveAiReplyContextDraft(key, hint);
+      _showAiReplyChoice(btn, em, data);
+      assert.equal(noteInput.value, hint);
+      await submit();
+      assert.equal(storage.get(key), hint);
       assert.equal(btn.disabled, false);
       assert.equal(btn.innerHTML, 'AI reply');
       _showAiReplyChoice(btn, em, data);
       assert.equal(noteInput.value, hint);
       noteInput.value = 'Please confirm Thursday in one sentence'; inputHandlers.input();
-      assert.equal(data._aiReplyNoteHint, noteInput.value);
+      assert.equal(storage.get(key), noteInput.value);
     """)
 
 
 def test_reader_context_note_clears_only_after_successful_insertion():
     _context(r"""
+      const key = _aiReplyContextDraftKey(em, data);
+      _saveAiReplyContextDraft(key, hint);
       callbackResult = true;
-      assert.equal(await _runAiReplyFromButton(btn, em, data, 'ai-reply-fast', hint), true);
-      assert.equal(Object.hasOwn(data, '_aiReplyNoteHint'), false);
+      _showAiReplyChoice(btn, em, data);
+      await submit();
+      assert.equal(storage.has(key), false);
+      assert.equal(calls[0].noteHint, hint);
       assert.equal(btn.disabled, false);
+    """)
+
+
+def test_reader_context_note_is_scoped_to_account_folder_and_message():
+    _context(r"""
+      const first = _aiReplyContextDraftKey(em, data);
+      _saveAiReplyContextDraft(first, hint);
+      for (const replacement of [{account_id: 'account-b'}, {folder: 'Sent'}, {uid: '43'}]) {
+        const other = _aiReplyContextDraftKey(em, {...data, ...replacement});
+        assert.notEqual(other, first);
+        assert.equal(_loadAiReplyContextDraft(other), '');
+      }
+      assert.equal(_loadAiReplyContextDraft(_aiReplyContextDraftKey(em, data)), hint);
+    """)
+
+
+@pytest.mark.parametrize("generated", [True, False])
+def test_reader_delegates_generation_only_after_draft_is_open_and_returns_insertion_result(generated):
+    import json
+    _reader(r"""
+      const generations = [];
+      _docModule.generateEmailReply = async opts => {
+        assert.equal(openedDocs.length, 1);
+        generations.push(opts);
+        return """ + json.dumps(generated) + r""";
+      };
+      assert.equal(await _openEmail(em, null, data, 'ai-reply-fast', hint), """ + json.dumps(generated) + r""");
+      assert.deepEqual(generations, [{mode: 'ai-reply-fast', noteHint: hint, originalBody: data.body}]);
+      assert.equal(requests.filter(r => r.url.endsWith('/ai-reply')).length, 0);
+      assert.equal((openedDocs[0].content.match(/Previous message/g) || []).length, 1);
+      assert.ok(openedDocs[0].content.includes(data.body));
+    """)
+
+
+def test_reader_does_not_generate_after_draft_creation_failure():
+    _reader(r"""
+      let generations = 0;
+      _docModule.generateEmailReply = async () => { generations++; return true; };
+      fetch = async () => ({ok: false, json: async () => ({error: 'Draft unavailable'})});
+      assert.equal(!!(await _openEmail(em, null, data, 'ai-reply-fast', hint)), false);
+      assert.equal(generations, 0);
+      assert.equal(openedDocs.length, 0);
     """)

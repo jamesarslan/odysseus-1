@@ -7,6 +7,8 @@ import subprocess
 
 import pytest
 
+from tests.helpers.document_source import declaration, function_body
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -21,7 +23,9 @@ def _run(scenario, functions="", fixtures=""):
     if not node:
         pytest.skip("node is required for browser-side behavior checks")
     helper = (ROOT / "static/js/emailReplyText.js").as_uri()
-    script = f"import {{cleanEmailReplyText}} from {json.dumps(helper)};\n" + r"""
+    stream_helper = (ROOT / "static/js/emailReplyStream.js").as_uri()
+    script = (f"import {{cleanEmailReplyText}} from {json.dumps(helper)};\n"
+              f"import {{readEmailReplyResponse}} from {json.dumps(stream_helper)};\n") + r"""
       import assert from 'node:assert/strict';
       const original = '---------- Previous message ----------\n' +
         'On Monday, Taylor <taylor@example.invalid> wrote:\n' +
@@ -29,7 +33,9 @@ def _run(scenario, functions="", fixtures=""):
       const finalReply = 'Hi Taylor,\n\nThursday works. You can come Thursday.\n\nMorgan';
       const hint = 'Thursday works, you can come Thursday';
       function response(reply = finalReply, extra = {}, ok = true) {
-        return {ok, json: async () => ({success: true, reply, ...extra})};
+        return new Response(JSON.stringify({success: true, reply, ...extra}), {
+          status: ok ? 200 : 503, headers: {"content-type": "application/json"},
+        });
       }
       function deferred() {
         let resolve;
@@ -45,24 +51,34 @@ def _run(scenario, functions="", fixtures=""):
 
 
 def _editor(scenario, replacement=False):
-    source = (ROOT / "static/js/document.js").read_text()
-    functions = "\n".join((
-        _between(source, "const _AI_REPLY_CONTEXT_STORE_PREFIX =", "function _closeDocAiReplyChoice("),
-        _between(source, "async function _aiReply(", "async function _scheduleSend("),
-        _between(source, "function _splitEmailReplyQuote(", "function _stripEmailReplyQuoteText("),
-    ))
+    functions = declaration("_AI_REPLY_CONTEXT_STORE_PREFIX") + "\n" + "\n".join(
+        function_body(name) for name in (
+            "_docAiReplyContextKey", "_loadDocAiReplyContext", "_saveDocAiReplyContext",
+            "_clearDocAiReplyContext", "_aiReply", "_splitEmailReplyQuote",
+        )
+    )
     if replacement:
-        functions += "\n" + _between(source, "export async function replaceEmailReplyBody(", "function _buildEmailContentFromFields(").replace("export ", "")
-        functions += "\n" + _between(source, "function _unfoldEmailHeaderLines(", "function _looksLikeWrappedEmailContent(")
+        functions += "\n" + function_body("replaceEmailReplyBody").replace("export ", "")
+        functions += "\n" + "\n".join(function_body(name) for name in (
+            "_unfoldEmailHeaderLines", "_parseEmailHeader", "_buildEmailContent",
+        ))
     fixtures = r"""
       const API_BASE = '';
       const window = {__odysseusActiveEmailAccount: 'account-a'};
-      let activeDocId = 'draft-a', _docAiReplyRequestSeq = 0;
+      let activeDocId = 'draft-a', _docAiReplyRequestSeq = 0, _emailAiReplyGeneration = 0;
       let _autoSaveDebounce = null, richbody = null;
       const docs = new Map([['draft-a', {
         language: 'email', sourceEmailAccountId: 'account-a', content: original,
       }]]);
-      const textarea = {value: original};
+      function editable(target) {
+        if (target.addEventListener) return target;
+        target.inputListeners = new Set();
+        target.addEventListener = (event, listener) => { if (event === 'input') target.inputListeners.add(listener); };
+        target.removeEventListener = (event, listener) => { if (event === 'input') target.inputListeners.delete(listener); };
+        target.emitInput = () => { for (const listener of target.inputListeners) listener(); };
+        return target;
+      }
+      const textarea = editable({value: original});
       const button = {innerHTML: 'Reply', disabled: false};
       const elements = {
         'doc-editor-textarea': textarea, 'doc-email-ai-reply-btn': button,
@@ -85,7 +101,13 @@ def _editor(scenario, replacement=False):
         showError(text) { notifications.push({kind: 'error', text}); },
       };
       const sessionModule = {getCurrentModel() { return ''; }, getCurrentSessionId() { return 'session-a'; }};
-      function _emailRichbodyActive() { return richbody; }
+      function _emailRichbodyActive() {
+        if (richbody) {
+          editable(richbody);
+          richbody.cloneNode ||= () => ({innerHTML: richbody.innerHTML, querySelectorAll() { return []; }});
+        }
+        return richbody;
+      }
       function _syncEmailRichbody(rich) { textarea.value = rich.innerText; }
       function _setEmailBodyText(target, value) {
         inserted.push(value); target.value = value;
@@ -172,7 +194,9 @@ def test_editor_sends_typed_intent_separately_and_inserts_only_final_reply():
       assert.equal(storage.has('note-key'), false);
       assert.equal(button.disabled, false);
       assert.equal(button.innerHTML, 'Reply');
-      assert.deepEqual(notifications, [{kind: 'toast', text: 'AI draft inserted'}]);
+      assert.deepEqual(notifications, [
+        {kind: 'toast', text: 'Writing AI reply'}, {kind: 'toast', text: 'AI draft inserted'},
+      ]);
     """)
 
 
@@ -234,7 +258,7 @@ def test_editor_failed_generation_preserves_draft_and_context_note(kind):
       assert.deepEqual(inserted, []);
       assert.equal(storage.get('note-key'), hint);
       assert.equal(button.disabled, false);
-      assert.equal(notifications[0].kind, 'error');
+      assert.equal(notifications.at(-1).kind, 'error');
       assert.doesNotMatch(textarea.value, /AI returned|Failed to generate/);
     """)
 
@@ -290,3 +314,92 @@ def test_editor_context_notes_are_scoped_to_mail_accounts():
       docs.get('draft-a').sourceEmailAccountId = 'account-a';
       assert.equal(_loadDocAiReplyContext(_docAiReplyContextKey()), hint);
     """)
+
+
+
+def test_editor_keeps_stream_frames_out_of_the_draft_until_completed_result():
+    _editor(r"""
+      let controller;
+      const encoder = new TextEncoder();
+      fetch = async () => new Response(new ReadableStream({start(c) { controller = c; }}), {
+        headers: {'content-type': 'text/event-stream'},
+      });
+      const emit = event => controller.enqueue(encoder.encode('data: ' + JSON.stringify(event) + '\n\n'));
+      const generation = _aiReply({noteHint: hint, originalBody: 'Original reader message'});
+      emit({type: 'reply', text: '<think>Need to reason about Thursday.</think>Done'});
+      for (let i = 0; i < 20; i++) await Promise.resolve();
+      assert.equal(textarea.value, original);
+      assert.deepEqual(inserted, []);
+      emit({type: 'reply', text: finalReply.slice(0, 20)});
+      emit({type: 'result', success: true, reply: finalReply});
+      assert.equal(await generation, true);
+      assert.deepEqual(inserted, [finalReply + '\n\n' + original]);
+      assert.equal(textarea.inputListeners.size, 0);
+    """)
+
+
+def test_editor_interrupted_stream_preserves_draft_and_context():
+    _editor(r"""
+      const encoder = new TextEncoder();
+      fetch = async () => new Response(new ReadableStream({start(controller) {
+        controller.enqueue(encoder.encode('data: ' + JSON.stringify({type: 'reply', text: 'Hi Taylor, partial'}) + '\n\n'));
+        controller.close();
+      }}), {headers: {'content-type': 'text/event-stream'}});
+      const before = textarea.value;
+      assert.equal(await _aiReply({noteHint: hint, contextKey: 'note-key'}), false);
+      assert.equal(textarea.value, before);
+      assert.deepEqual(inserted, []);
+      assert.equal(storage.get('note-key'), hint);
+      assert.equal(textarea.inputListeners.size, 0);
+      assert.equal(notifications.at(-1).kind, 'error');
+    """)
+
+
+def test_editor_typing_then_undoing_still_invalidates_inflight_insertion():
+    _editor(r"""
+      const pending = deferred(); fetch = async () => pending.promise;
+      const generation = _aiReply({noteHint: hint});
+      textarea.value = 'An edit that was undone'; textarea.emitInput();
+      textarea.value = original; textarea.emitInput();
+      pending.resolve(response());
+      assert.equal(await generation, false);
+      assert.equal(textarea.value, original);
+      assert.deepEqual(inserted, []);
+      assert.equal(textarea.inputListeners.size, 0);
+      assert.match(notifications.at(-1).text, /draft was edited/);
+    """)
+
+
+def test_editor_stream_stops_after_user_edit_without_inserting_provisional_reply():
+    _editor(r"""
+      let controller;
+      const encoder = new TextEncoder();
+      fetch = async () => new Response(new ReadableStream({start(c) { controller = c; }}), {
+        headers: {'content-type': 'text/event-stream'},
+      });
+      const generation = _aiReply({noteHint: hint});
+      textarea.value = 'Morgan typed during generation'; textarea.emitInput();
+      controller.enqueue(encoder.encode('data: ' + JSON.stringify({type: 'reply', text: finalReply}) + '\n\n'));
+      assert.equal(await generation, false);
+      assert.equal(textarea.value, 'Morgan typed during generation');
+      assert.deepEqual(inserted, []);
+      assert.equal(textarea.inputListeners.size, 0);
+    """)
+
+
+def test_editor_preserves_stream_option_and_reader_original_separate_from_draft():
+    _editor(r"""
+      textarea.value = hint + '\n\n' + original;
+      assert.equal(await _aiReply({noteHint: hint, originalBody: 'Original reader message', mode: 'ai-reply-full'}), true);
+      assert.equal(requests[0].payload.original_body, 'Original reader message');
+      assert.equal(requests[0].payload.current_draft, hint);
+      assert.equal(requests[0].payload.stream, true);
+      assert.equal(requests[0].payload.fast, false);
+    """)
+
+
+
+def test_reply_dependencies_are_precached_at_their_actual_import_urls():
+    service_worker = (ROOT / "static/sw.js").read_text()
+    for helper in ("emailReplyStream", "emailReplyText"):
+        assert f"'/static/js/{helper}.js'" in service_worker
