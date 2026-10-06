@@ -8398,6 +8398,7 @@ async function _emailTranslateLanguage() {
 }
 
 async function _runAiReplyFromButton(btn, em, data, mode, noteHint = '') {
+  if (data) data._aiReplyNoteHint = noteHint;
   _snapEmailModalToLeftSidebar(btn.closest('.modal'));
   btn.disabled = true;
   const orig = btn.innerHTML;
@@ -8409,7 +8410,10 @@ async function _runAiReplyFromButton(btn, em, data, mode, noteHint = '') {
     btn.appendChild(wp.element);
   } catch (_) {}
   try {
-    if (state._onEmailClick) await state._onEmailClick({ email: em, emailData: data, mode, noteHint });
+    const inserted = state._onEmailClick
+      ? await state._onEmailClick({ email: em, emailData: data, mode, noteHint }) : false;
+    if (inserted && data) delete data._aiReplyNoteHint;
+    return !!inserted;
   } finally {
     try { wp && wp.stop(); } catch (_) {}
     btn.disabled = false;
@@ -8472,6 +8476,10 @@ function _showAiReplyChoice(btn, em, data) {
     </div>
   `;
   const noteInput = menu.querySelector('[data-note-input]');
+  noteInput.value = data?._aiReplyNoteHint || '';
+  noteInput.addEventListener('input', () => {
+    if (data) data._aiReplyNoteHint = noteInput.value || '';
+  });
   setTimeout(() => noteInput.focus(), 0);
   menu.addEventListener('click', async (ev) => {
     const choice = ev.target.closest('[data-mode]');
