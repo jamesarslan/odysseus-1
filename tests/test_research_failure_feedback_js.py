@@ -74,8 +74,13 @@ def _cards(scenario):
       const document = {createElement() { return new Element(); }};
       const jobs = {formatElapsed() { return '1:45'; }};
       const _expandedJobId = null;
+      const _historySelectMode = false;
       const _cancelIcon = '', _externalIcon = '', _chatIcon = '';
       const _copyIcon = '', _trashIcon = '', _apiBase = '';
+      const _moreIcon = '';
+      function _researchVisualVariant() { return null; }
+      function _jobOverflowHTML() { return ''; }
+      function _wireJobOverflow() { return {close() {}}; }
       function card(extra = {}) {
         return _buildJobCard({id: 'synthetic', status: 'done', query: 'test',
           sources: [], ...extra});
@@ -127,6 +132,14 @@ def test_legacy_zero_sources_and_successful_library_cards_keep_existing_behavior
       const success = card({sources: null, sourceCount: 3, _fromLibrary: true});
       assert.doesNotMatch(success.innerHTML, /research-job-failnote/);
       assert.match(success.innerHTML, /3 sources/);
+    """)
+
+
+def test_explain_only_report_without_web_sources_is_not_a_failure():
+    _cards("""
+      const explanation = card({mode: 'explain', sources: []});
+      assert.doesNotMatch(explanation.innerHTML, /research-job-failnote|search failed|no results/);
+      assert.match(explanation.innerHTML, /model only/);
     """)
 
 

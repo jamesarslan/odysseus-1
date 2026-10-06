@@ -17,6 +17,14 @@ from services.search import core as search_core, providers
 from routes.research import research_routes
 
 
+@pytest.fixture(autouse=True)
+def no_live_browser(monkeypatch):
+    async def no_browser(*args, **kwargs):
+        return None
+
+    monkeypatch.setattr(DeepResearcher, "_browser_fallback", no_browser)
+
+
 def _researcher(monkeypatch, *, max_empty_rounds=1, **kwargs):
     options = {"max_rounds": 2, **kwargs}
     if max_empty_rounds is not None:
@@ -29,8 +37,11 @@ def _researcher(monkeypatch, *, max_empty_rounds=1, **kwargs):
     async def plan(question):
         return "Fixture plan"
 
-    async def category(question):
+    async def category(question, research_plan=""):
         return None
+
+    async def actions(*args):
+        return []
 
     async def queries(question, report, round_num):
         researcher.queries_used.add("fixture query")
@@ -39,6 +50,7 @@ def _researcher(monkeypatch, *, max_empty_rounds=1, **kwargs):
     monkeypatch.setattr(researcher, "_create_plan", plan)
     monkeypatch.setattr(researcher, "_classify_category", category)
     monkeypatch.setattr(researcher, "_generate_queries", queries)
+    monkeypatch.setattr(researcher, "_plan_research_actions", actions)
     monkeypatch.setattr(providers, "_get_search_settings", lambda: {"search_provider": "searxng"})
     monkeypatch.setattr(search_core, "_build_provider_chain", lambda _: ["searxng", "duckduckgo"])
     return researcher
@@ -123,7 +135,7 @@ def test_empty_model_extraction_is_not_counted_as_a_finding(monkeypatch):
     monkeypatch.setattr(search_core, "_call_provider", lambda *args: [
         {"url": "https://source.test/page", "title": "Fixture page"},
     ])
-    monkeypatch.setattr("src.search.fetch_webpage_content", lambda *args: {
+    monkeypatch.setattr("src.search.content.fetch_webpage_content", lambda *args, **kwargs: {
         "success": True, "content": "A public fixture page about knowledge distillation.",
     })
 
@@ -147,7 +159,7 @@ async def test_incomplete_llm_output_cannot_become_research_evidence(monkeypatch
     monkeypatch.setattr(search_core, "_call_provider", lambda *args: [
         {"url": "https://source.test/page", "title": "Fixture page"},
     ])
-    monkeypatch.setattr("src.search.fetch_webpage_content", lambda *args: {
+    monkeypatch.setattr("src.search.content.fetch_webpage_content", lambda *args, **kwargs: {
         "success": True, "content": "A public fixture page about knowledge distillation.",
     })
     monkeypatch.setattr(llm_core, "_response_cache", {})
@@ -175,7 +187,7 @@ async def test_incomplete_llm_output_cannot_become_research_evidence(monkeypatch
 
 async def test_completed_llm_extraction_keeps_final_evidence(monkeypatch):
     researcher = _researcher(monkeypatch)
-    monkeypatch.setattr("src.search.fetch_webpage_content", lambda *args: {
+    monkeypatch.setattr("src.search.content.fetch_webpage_content", lambda *args, **kwargs: {
         "success": True, "content": "A public fixture page about knowledge distillation.",
     })
     monkeypatch.setattr(llm_core, "_response_cache", {})
@@ -208,7 +220,9 @@ async def test_research_uses_nonthinking_for_small_steps_and_default_for_reports
     researcher = DeepResearcher(
         llm_endpoint="http://localhost:8081/v1", llm_model="Qwen3.5-9B",
     )
-    monkeypatch.setattr("src.search.fetch_webpage_content", lambda *args: {
+    # Exercise every LLM helper independently of the small-model fast path.
+    researcher.simple_research_mode = False
+    monkeypatch.setattr("src.search.content.fetch_webpage_content", lambda *args, **kwargs: {
         "success": True, "content": "A public fixture page about knowledge distillation.",
     })
     monkeypatch.setattr(llm_core, "_response_cache", {})
@@ -220,6 +234,7 @@ async def test_research_uses_nonthinking_for_small_steps_and_default_for_reports
         json.dumps({"sub_questions": ["What is distillation?"]}),
         "general",
         json.dumps(["knowledge distillation"]),
+        json.dumps({"actions": [{"tool": "web_search", "query": "teacher student distillation"}]}),
         json.dumps({"summary": "A student learns from teacher outputs.", "evidence": "Fixture evidence."}),
         "YES — sufficient evidence.",
         "A synthesized report based on the fixture evidence.",
@@ -238,27 +253,30 @@ async def test_research_uses_nonthinking_for_small_steps_and_default_for_reports
         await researcher._create_plan("fixture question")
         await researcher._classify_category("fixture question")
         await researcher._generate_queries("fixture question", "", 1)
+        monkeypatch.setattr("src.settings.get_setting", lambda key, default=None: default)
+        actions = await researcher._plan_research_actions("fixture question", "", 1)
+        assert actions[0].args["query"] == "teacher student distillation"
         finding = await researcher._fetch_and_extract("https://source.test", "fixture question", "Fixture")
         await researcher._should_stop("fixture question", "report", 2)
         report = await researcher._synthesize("fixture question", [finding], "")
         await researcher._final_report("fixture question", report)
 
-    assert len(requests) == 7
-    assert all(payload["chat_template_kwargs"] == {"enable_thinking": False} for payload in requests[:5])
-    assert all("chat_template_kwargs" not in payload for payload in requests[5:])
+    assert len(requests) == 8
+    assert all(payload["chat_template_kwargs"] == {"enable_thinking": False} for payload in requests[:6])
+    assert all("chat_template_kwargs" not in payload for payload in requests[6:])
     # The real transport sees trusted date grounding at every step, including
     # stop, synthesis, and final report, which previously used a stale model year.
     assert all(payload["messages"][0] == {"role": "system", "content": date_context} for payload in requests)
-    extraction_messages = requests[3]["messages"]
+    extraction_messages = requests[4]["messages"]
     assert "public fixture page" not in extraction_messages[0]["content"]
     assert extraction_messages[-1]["role"] == "user"
     assert "UNTRUSTED_SOURCE_DATA" in extraction_messages[-1]["content"]
     assert "public fixture page" in extraction_messages[-1]["content"]
     assert '"relevant": false' in extraction_messages[1]["content"]
-    assert requests[4]["messages"][1]["content"].startswith(date_context)
+    assert requests[5]["messages"][1]["content"].startswith(date_context)
     assert "3-8 content words" in requests[2]["messages"][1]["content"]
-    assert "Do not invent hardware minimums" in requests[5]["messages"][1]["content"]
     assert "Do not invent hardware minimums" in requests[6]["messages"][1]["content"]
+    assert "Do not invent hardware minimums" in requests[7]["messages"][1]["content"]
 
 
 @pytest.mark.parametrize("response", [
@@ -275,7 +293,7 @@ async def test_research_uses_nonthinking_for_small_steps_and_default_for_reports
 ])
 async def test_irrelevant_or_empty_extraction_is_not_research_evidence(monkeypatch, response):
     researcher = DeepResearcher(llm_endpoint="http://local.test/v1", llm_model="fixture")
-    monkeypatch.setattr("src.search.fetch_webpage_content", lambda *args: {
+    monkeypatch.setattr("src.search.content.fetch_webpage_content", lambda *args, **kwargs: {
         "success": True, "content": "A public source fixture.",
     })
 
@@ -295,7 +313,7 @@ async def test_irrelevant_or_empty_extraction_is_not_research_evidence(monkeypat
 ])
 async def test_useful_extraction_keeps_explicit_and_legacy_formats(monkeypatch, response):
     researcher = DeepResearcher(llm_endpoint="http://local.test/v1", llm_model="fixture")
-    monkeypatch.setattr("src.search.fetch_webpage_content", lambda *args: {
+    monkeypatch.setattr("src.search.content.fetch_webpage_content", lambda *args, **kwargs: {
         "success": True, "content": "A public source fixture.",
     })
 

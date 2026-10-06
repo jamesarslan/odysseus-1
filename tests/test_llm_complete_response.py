@@ -356,3 +356,69 @@ async def test_subscription_done_without_opt_in_confirmation_is_rejected(upstrea
         await _call(url=_SUBSCRIPTION_URL, require_complete_response=True)
 
     assert not llm_core._response_cache
+
+
+def _native_answer_stream(provider, *, answer="Finished email reply.", truncated=False, interrupted=False):
+    if provider == "ollama":
+        frames = [{"message": {"content": answer}}]
+        if not interrupted:
+            frames.append({"done": True, "done_reason": "length" if truncated else "stop"})
+        body = "".join(json.dumps(frame) + "\n" for frame in frames)
+    elif provider == "anthropic":
+        frames = [{"type": "content_block_delta", "delta": {"type": "text_delta", "text": answer}}]
+        if not interrupted:
+            frames.extend([
+                {"type": "message_delta", "delta": {"stop_reason": "max_tokens" if truncated else "end_turn"}},
+                {"type": "message_stop"},
+            ])
+        body = "".join("data:" + json.dumps(frame) + "\n\n" for frame in frames)
+    else:
+        frames = [{"choices": [{"delta": {"content": answer}}]}]
+        if not interrupted:
+            frames.append({"choices": [{"delta": {}, "finish_reason": "length" if truncated else "stop"}]})
+        body = "".join("data:" + json.dumps(frame) + "\n\n" for frame in frames)
+        if not interrupted:
+            body += "data:[DONE]\n\n"
+    return httpx.Response(200, text=body)
+
+
+@pytest.mark.parametrize("provider,url", [
+    ("compatible", "https://llm.test/v1"),
+    ("ollama", "https://ollama.com/api/chat"),
+    ("anthropic", "https://api.anthropic.com/v1/messages"),
+])
+@pytest.mark.parametrize("failure", [None, "truncated", "interrupted", "empty"])
+async def test_strict_native_stream_requires_finished_nonempty_answer(upstream, provider, url, failure):
+    responses, _ = upstream
+    responses.append(_native_answer_stream(
+        provider, answer="" if failure == "empty" else "Finished email reply.",
+        truncated=failure == "truncated", interrupted=failure == "interrupted",
+    ))
+    chunks = [chunk async for chunk in llm_core.stream_llm(
+        url, "fixture-model", [{"role": "user", "content": "Draft a reply."}],
+        require_complete_response=True,
+    )]
+    output = "".join(chunks)
+    if failure:
+        assert "event: error" in output
+        assert "data: [DONE]" not in output
+    else:
+        assert '"type": "response_complete"' in output
+        assert "data: [DONE]" in output
+        assert "event: error" not in output
+
+
+@pytest.mark.parametrize("provider,url", [
+    ("compatible", "https://llm.test/v1"),
+    ("ollama", "https://ollama.com/api/chat"),
+    ("anthropic", "https://api.anthropic.com/v1/messages"),
+])
+async def test_default_native_stream_contract_remains_unchanged(upstream, provider, url):
+    responses, _ = upstream
+    responses.append(_native_answer_stream(provider, truncated=True))
+    output = "".join([chunk async for chunk in llm_core.stream_llm(
+        url, "fixture-model", [{"role": "user", "content": "Draft a reply."}],
+    )])
+    assert "data: [DONE]" in output
+    assert "response_complete" not in output
+    assert "event: error" not in output

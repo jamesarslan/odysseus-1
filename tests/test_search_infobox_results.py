@@ -46,6 +46,8 @@ def test_infobox_only_response_is_a_source_even_with_other_engine_errors(search)
         "title": "Knowledge distillation",
         "url": "https://en.wikipedia.org/wiki/Knowledge_distillation",
         "snippet": "Synthetic encyclopedia summary",
+        "provider": "searxng", "engines": ["wikipedia"],
+        "published_date": None, "query": "knowledge distillation",
     }]
     assert len(search.calls) == 1
 
@@ -54,7 +56,9 @@ def test_plain_results_keep_order_shape_and_count_without_engine_metadata(search
     ordinary = [{"title": str(i), "url": f"https://example.com/{i}", "content": "text"} for i in range(5)]
     rows = search({"results": ordinary}, count=3)
 
-    assert rows == [{"title": str(i), "url": f"https://example.com/{i}", "snippet": "text"} for i in range(3)]
+    assert rows == [{"title": str(i), "url": f"https://example.com/{i}", "snippet": "text",
+                    "provider": "searxng", "engines": [], "published_date": None,
+                    "query": "knowledge distillation"} for i in range(3)]
 
 
 def test_grouped_engines_get_fair_capacity_before_result_count_limit(search):
@@ -71,7 +75,7 @@ def test_grouped_engines_get_fair_capacity_before_result_count_limit(search):
     for engine in ["mwmbl", "github", "semantic scholar"]:
         indices = [int(row["title"].rsplit("-", 1)[1]) for row in rows if row["title"].startswith(engine + "-")]
         assert indices == list(range(len(indices)))
-    assert all(set(row) == {"title", "url", "snippet"} for row in rows)
+    assert all(set(row) == {"title", "url", "snippet", "provider", "engines", "published_date", "query"} for row in rows)
 
 
 def test_shared_urls_do_not_consume_capacity_or_starve_next_engine_candidate(search):

@@ -40,6 +40,26 @@ def test_searxng_explicit_engines_exclude_default_categories(upstream):
     assert "categories" not in requests[0].url.params
 
 
+def test_requested_engines_preserve_publication_metadata_and_date_filter(upstream):
+    responses, requests = upstream
+    responses.append((200, {"results": [{
+        "url": "https://source.test/paper", "title": "Paper",
+        "engines": ["semantic scholar"], "publishedDate": "2026-10-01",
+    }]}))
+
+    rows = providers.searxng_search_api(
+        "knowledge distillation", engines="semantic scholar", time_filter="month",
+    )
+
+    assert requests[0].url.params["engines"] == "semantic scholar"
+    assert requests[0].url.params["time_range"] == "month"
+    assert "categories" not in requests[0].url.params
+    assert rows[0]["published_date"] == "2026-10-01"
+    assert rows[0]["engines"] == ["semantic scholar"]
+    assert rows[0]["provider"] == "searxng"
+    assert rows[0]["query"] == "knowledge distillation"
+
+
 def test_searxng_preserves_engine_failures_across_empty_retries(upstream):
     responses, requests = upstream
     blocked = {"results": [], "unresponsive_engines": [["brave", "HTTP 429"], ["google", "CAPTCHA"]]}
@@ -64,7 +84,9 @@ def test_searxng_successful_fallback_ignores_prior_engine_errors(upstream):
     ])
 
     assert providers.searxng_search_api("knowledge distillation") == [
-        {"url": "https://source.test", "title": "", "snippet": "Useful evidence"},
+        {"url": "https://source.test", "title": "", "snippet": "Useful evidence",
+         "provider": "searxng", "engines": [], "published_date": None,
+         "query": "knowledge distillation"},
     ]
     assert len(requests) == 3
 
