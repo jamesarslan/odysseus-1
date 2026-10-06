@@ -1,0 +1,151 @@
+{
+  "head": "7df09b48758873fcaf5f5fa195fc2448644704c5",
+  "base": "2cd02da7fc5d500fa86511f2a36ddb431de532c8",
+  "transport": "Synthetic IMAP double; standalone uvicorn app; no real Gmail connection",
+  "options": [
+    {
+      "value": "INBOX",
+      "label": "INBOX"
+    },
+    {
+      "value": "[Gmail]/Envoyes",
+      "label": "Sent"
+    },
+    {
+      "value": "[Gmail]/All Mail",
+      "label": "Archive / All Mail"
+    },
+    {
+      "value": "[Gmail]/Corbeille",
+      "label": "Trash"
+    },
+    {
+      "value": "__scheduled__",
+      "label": "Scheduled"
+    }
+  ],
+  "sent": {
+    "subjectVisible": true,
+    "sentBadge": true,
+    "folder": "[Gmail]/Envoyes"
+  },
+  "calls": [
+    [
+      "LIST"
+    ],
+    [
+      "LIST"
+    ],
+    [
+      "SELECT",
+      "[Gmail]/Envoyes",
+      true
+    ],
+    [
+      "SEARCH",
+      "[Gmail]/Envoyes"
+    ],
+    [
+      "FETCH",
+      "[Gmail]/Envoyes"
+    ],
+    [
+      "SELECT",
+      "INBOX",
+      true
+    ],
+    [
+      "SEARCH",
+      "INBOX"
+    ],
+    [
+      "FETCH",
+      "INBOX"
+    ],
+    [
+      "SELECT",
+      "[Gmail]/Envoyes",
+      true
+    ],
+    [
+      "FETCH",
+      "[Gmail]/Envoyes"
+    ],
+    [
+      "SELECT",
+      "INBOX",
+      true
+    ],
+    [
+      "FETCH",
+      "INBOX"
+    ],
+    [
+      "SELECT",
+      "[Gmail]/Envoyes",
+      true
+    ],
+    [
+      "SEARCH",
+      "[Gmail]/Envoyes"
+    ],
+    [
+      "FETCH",
+      "[Gmail]/Envoyes"
+    ],
+    [
+      "SELECT",
+      "[Gmail]/Envoyes",
+      true
+    ],
+    [
+      "SEARCH",
+      "[Gmail]/Envoyes"
+    ],
+    [
+      "FETCH",
+      "[Gmail]/Envoyes"
+    ],
+    [
+      "SELECT",
+      "[Gmail]/Envoyes",
+      true
+    ],
+    [
+      "SEARCH",
+      "[Gmail]/Envoyes"
+    ],
+    [
+      "FETCH",
+      "[Gmail]/Envoyes"
+    ]
+  ],
+  "pageErrors": [],
+  "runtime_sha256": {
+    "mcp_servers/email_server.py": "4c8e527065ed5ec17b7dbc32e671dbe7db6e0064738e8dcd300f7342f10034ca",
+    "routes/email/email_helpers.py": "ef0efbc508c70163ac577d31a9dedc2f40807ca2fd562d7478d750aa7114640b",
+    "routes/email/email_pollers.py": "2fd6094327c0cd21f5d2c923bf157213bce4d196e4fbd866f7794c85271cf098",
+    "routes/email/email_routes.py": "019db5037bcb2162af002ea3735bc488bb575decad37322488ac1c664e05dead",
+    "src/imap_folders.py": "56b7062757ebfa0bc8224a1716757bef726db52c222fe09779023f0e30074163",
+    "static/js/emailInbox.js": "ad7dc702666ad51ad40786a71878b9be08f7644edf40988dabea8623e35d5bee",
+    "static/js/emailLibrary/index.js": "c1dbf11a33d0d2aae98e8f198c0950c4b0e74eb44dac56b6350e0baa9321ad1d",
+    "static/js/emailLibrary/menus.js": "526a321c0c8395a62382d7a6a2b701656878fffc8b0b37eff2a58c575f9538f1",
+    "static/js/emailLibrary/state.js": "d5df11f1b7961d61b13075a890141d8dfdc818ac592f9c602d8f61f884c67a26"
+  },
+  "regressions": {
+    "passed": 704,
+    "skipped": 3,
+    "skip_reasons": [
+      "optional PyMuPDF missing",
+      "optional openpyxl missing",
+      "opt-in Ajax fixture not configured"
+    ],
+    "final_frontend_passed": 20
+  },
+  "screenshots": {
+    "desktop.png": "6d356f42bfdbbd26b2dc05ccca015ab2cffabff9765dbc5ed2b05238ad84f9ec",
+    "desktop-list.png": "f3a83948acc9419555ab6672ad59df30119af90b8fab00835bc6d5125eacef9a",
+    "mobile.png": "1131b1495bfe4456e28218779524dcd8fa6aeff4a9ecac0e2d95f1fb374432e2"
+  },
+  "screenshots_visually_checked": true
+}
