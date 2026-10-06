@@ -422,3 +422,61 @@ async def test_default_native_stream_contract_remains_unchanged(upstream, provid
     assert "data: [DONE]" in output
     assert "response_complete" not in output
     assert "event: error" not in output
+
+
+async def test_legacy_positional_async_controls_preserve_default_completion_contract(upstream, monkeypatch):
+    responses, _ = upstream
+    responses.append(_completion("", reasoning="Legacy reasoning fallback", finish_reason="length"))
+    captured = []
+    original_cache_key = llm_core._get_cache_key
+
+    def capture_cache_key(*args, **kwargs):
+        captured.append(kwargs)
+        return original_cache_key(*args, **kwargs)
+
+    monkeypatch.setattr(llm_core, "_get_cache_key", capture_cache_key)
+    result = await llm_core.llm_call_async(
+        "https://llm.test/v1", "fixture-model", [{"role": "user", "content": "Reply."}],
+        0.3, 128, None, 60, 1, None, None, "foreground", False, False, "off", "low",
+    )
+
+    assert result == "Legacy reasoning fallback"
+    assert captured[0]["thinking_mode"] == "off"
+    assert captured[0]["reasoning_effort"] == "low"
+    assert all(not key.startswith(("complete:", "thinking:")) for key in llm_core._response_cache)
+
+
+async def test_legacy_positional_stream_controls_preserve_default_frames_and_inner_retry(upstream, monkeypatch):
+    import inspect
+
+    responses, _ = upstream
+    responses.extend([_native_answer_stream("compatible", truncated=True) for _ in range(2)])
+    captured = []
+    original_inner = llm_core._stream_llm_inner
+
+    async def capture_inner(*args, **kwargs):
+        binding = inspect.signature(original_inner).bind(*args, **kwargs)
+        binding.apply_defaults()
+        captured.append(binding.arguments)
+        async for chunk in original_inner(*args, **kwargs):
+            yield chunk
+
+    monkeypatch.setattr(llm_core, "_stream_llm_inner", capture_inner)
+    arguments = (
+        "https://llm.test/v1", "fixture-model", [{"role": "user", "content": "Reply."}],
+        0.3, 128, None, 60, None, None, None, False, "foreground", "off", "low",
+    )
+    public_output = "".join([chunk async for chunk in llm_core.stream_llm(*arguments)])
+    inner_arguments = (*arguments[:11], *arguments[12:], False)
+    inner_output = "".join([chunk async for chunk in llm_core._stream_llm_inner(*inner_arguments)])
+
+    for output in (public_output, inner_output):
+        assert "Finished email reply." in output
+        assert "data: [DONE]" in output
+        assert "response_complete" not in output
+        assert "event: error" not in output
+    for binding in captured:
+        assert binding["thinking_mode"] == "off"
+        assert binding["reasoning_effort"] == "low"
+        assert binding["require_complete_response"] is False
+    assert captured[1]["_retry_silent_local"] is False
