@@ -343,6 +343,44 @@ def test_working_fallback_does_not_leave_failure_metadata(monkeypatch):
     assert researcher._search_errors == []
 
 
+@pytest.mark.parametrize("path", ["small_model_queries", "standard_queries", "action_planner"])
+async def test_active_planners_receive_short_queries_and_named_source_guidance(monkeypatch, path):
+    researcher = DeepResearcher(llm_endpoint="http://localhost:8081/v1", llm_model="Qwen3.5-9B")
+    researcher.simple_research_mode = path == "small_model_queries"
+    monkeypatch.setattr("src.settings.get_setting", lambda key, default=None: default)
+    monkeypatch.setattr(llm_core, "_response_cache", {})
+    monkeypatch.setattr(llm_core, "_response_model_cache", {})
+    requests = []
+    query = "Hugging Face PEFT LoRA documentation"
+    output = {"actions": [{"tool": "web_search", "query": query}]} if path == "action_planner" else [query]
+
+    def upstream(request):
+        requests.append(json.loads(request.content))
+        return httpx.Response(200, json={"choices": [{
+            "message": {"content": json.dumps(output)}, "finish_reason": "stop",
+        }]})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(upstream)) as client:
+        monkeypatch.setattr(llm_core, "_get_http_client", lambda: client)
+        question = "Explain LoRA using the Hugging Face PEFT documentation and original paper."
+        if path == "action_planner":
+            actions = await researcher._plan_research_actions(question, "", 1)
+            assert actions[0].tool == "web_search"
+            assert actions[0].args["query"] == query
+        else:
+            assert await researcher._generate_queries(question, "", 1) == [query]
+
+    assert len(requests) == 1
+    assert requests[0]["chat_template_kwargs"] == {"enable_thinking": False}
+    prompt = requests[0]["messages"][-1]["content"]
+    assert question in prompt
+    assert "3-8 content words, not full sentences" in prompt
+    assert "explicitly named sources" in prompt
+    assert "exact project or paper name" in prompt
+    assert "Do not add a year unless the question explicitly needs" in prompt
+    assert "Do not introduce unrequested hardware" in prompt
+
+
 def test_explicit_legacy_search_error_is_inferred_without_source_guessing():
     legacy = {
         "sources": [],

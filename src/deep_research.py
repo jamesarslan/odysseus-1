@@ -82,6 +82,7 @@ Generate {num_queries} focused search queries that will help answer the question
 {round_instruction}
 Use concise keyword queries of about 3-8 content words, not full sentences.
 Preserve essential technical names and search a different sub-topic in each query.
+Prioritize explicitly named sources with a dedicated query using the exact project or paper name.
 Do not add a year unless the question explicitly needs a date or current information.
 Do not introduce unrequested hardware, platforms, or other assumptions.
 
@@ -98,6 +99,11 @@ Round: {round_num}
 
 Return ONLY a JSON array containing {num_queries} short search-query strings.
 Use the question's exact topic. Do not explain your answer.
+Use concise keyword queries of about 3-8 content words, not full sentences.
+Preserve essential technical names and search a different sub-topic in each query.
+Prioritize explicitly named sources with a dedicated query using the exact project or paper name.
+Do not add a year unless the question explicitly needs a date or current information.
+Do not introduce unrequested hardware, platforms, or other assumptions.
 Example: ["topic latest news", "topic official sources"]
 """
 
@@ -134,6 +140,11 @@ Available actions:
 - private_browser: actual browser tool alias; Research only supports read/open/snapshot with a URL. Args: {{"action": "read", "url": "https://..."}}
 
 Rules:
+- For web_search, use concise keyword queries of about 3-8 content words, not full sentences.
+- Preserve essential technical names and search a different sub-topic in each query.
+- Prioritize explicitly named sources with a dedicated query using the exact project or paper name.
+- Do not add a year unless the question explicitly needs a date or current information.
+- Do not introduce unrequested hardware, platforms, or other assumptions.
 - If the user's latest wording is a meta request like "search this" or "can you search", infer the real topic from the original question, research plan, and report; never use the meta request itself as the search query.
 - Prefer web_search for open questions or when you need discovery.
 - Prefer web_fetch for official/source URLs you already know.
