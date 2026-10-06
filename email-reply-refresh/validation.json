@@ -1,0 +1,528 @@
+{
+  "public_head": "07cd2ea5e06da43472e2c322e45f701a31b7433a",
+  "app_base": "http://127.0.0.1:7001",
+  "synthetic_only": true,
+  "unrelated_fixture_overrides": [
+    "task notification logging returns200 to avoid baseline AUTH_ENABLED=false401redirect"
+  ],
+  "cases": [
+    {
+      "name": "reader_context_reply",
+      "live_local_generation": true,
+      "body": "Hi Taylor,\n\n\n\n\n\nThursday works, you can come Thursday.\n\n\n\n\n\nBest regards,\n\n\n\n\nMorgan\n\n\n\n\n---------- Previous message ----------\nOn Tue, Oct 6, 2026, 11:00 AM, Taylor  wrote:\n> Hi Morgan,\n>\n> Would Tuesday be suitable for me to come over? Please confirm which day works for you.\n>\n> Best regards,\n> Taylor",
+      "own_body": "Hi Taylor,\n\n\n\n\n\nThursday works, you can come Thursday.\n\n\n\n\n\nBest regards,\n\n\n\n\nMorgan",
+      "quote_count": 1,
+      "request": {
+        "mode": "live",
+        "user_hint": "Thursday works, you can come Thursday",
+        "current_draft": "",
+        "original_body": "Hi Morgan,\n\nWould Tuesday be suitable for me to come over? Please confirm which day works for you.\n\nBest regards,\nTaylor",
+        "folder": "INBOX",
+        "uid": "reply-fixture-42",
+        "stream": true
+      },
+      "delivery": {
+        "mode": "live",
+        "success": true,
+        "reply": "Hi Taylor,\n\nThursday works, you can come Thursday.\n\nBest regards,\nMorgan",
+        "error": ""
+      }
+    },
+    {
+      "name": "editor_explicit_note_overrides_typed_draft",
+      "live_local_generation": true,
+      "own_body": "Hi Taylor,\n\n\n\n\n\nThursday works, you can come Thursday.\n\n\n\n\n\nBest regards,\n\n\n\n\nMorgan",
+      "quote_count": 1,
+      "request": {
+        "mode": "live",
+        "user_hint": "Thursday works, you can come Thursday",
+        "current_draft": "Tuesday works, you can come Tuesday",
+        "original_body": "---------- Previous message ----------\nOn Tuesday, Taylor  wrote:\n> Hi Morgan,\n>\n> Would Tuesday be suitable for me to come over? Please confirm which day works for you.\n>\n> Best regards,\n> Taylor",
+        "folder": "INBOX",
+        "uid": "reply-editor-1",
+        "stream": true
+      },
+      "delivery": {
+        "mode": "live",
+        "success": true,
+        "reply": "Hi Taylor,\n\nThursday works, you can come Thursday.\n\nBest regards,\nMorgan",
+        "error": ""
+      }
+    },
+    {
+      "name": "editor_polishes_typed_intent",
+      "live_local_generation": true,
+      "own_body": "Hi Taylor,\n\n\n\n\n\nThursday works, you can come Thursday.\n\n\n\n\n\nBest regards,\n\n\n\n\nMorgan",
+      "quote_count": 1,
+      "request": {
+        "mode": "live",
+        "user_hint": "",
+        "current_draft": "Thursday works, you can come Thursday",
+        "original_body": "---------- Previous message ----------\nOn Tuesday, Taylor  wrote:\n> Hi Morgan,\n>\n> Would Tuesday be suitable for me to come over? Please confirm which day works for you.\n>\n> Best regards,\n> Taylor",
+        "folder": "INBOX",
+        "uid": "reply-editor-2",
+        "stream": true
+      },
+      "delivery": {
+        "mode": "live",
+        "success": true,
+        "reply": "Hi Taylor,\n\nThursday works, you can come Thursday.\n\nBest regards,\nMorgan",
+        "error": ""
+      }
+    },
+    {
+      "name": "late_edit_preserved",
+      "controlled_delivery_delay": true,
+      "live_local_generation": true,
+      "own_body": "Morgan typed a new sentence while AI was drafting.",
+      "quote_count": 1
+    },
+    {
+      "name": "status_only_rejected",
+      "controlled_invalid_api_response": true,
+      "own_body": "Morgan typed a new sentence while AI was drafting.",
+      "retained_note": "Thursday works, you can come Thursday"
+    },
+    {
+      "name": "provisional_frame_and_disconnect_preserve_draft",
+      "controlled_incomplete_stream": true,
+      "own_body": "Morgan typed a new sentence while AI was drafting.",
+      "retained_note": "Thursday works, you can come Thursday"
+    }
+  ],
+  "captures": [
+    {
+      "file": "desktop-reader-ai-reply.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "mobile": false
+      },
+      "validation": {
+        "clip": {
+          "x": 814,
+          "y": 0,
+          "width": 626,
+          "height": 1000,
+          "scale": 1
+        },
+        "horizontal_overflow": false,
+        "body_chars": 297
+      },
+      "pixels": {
+        "width": 626,
+        "height": 1000
+      },
+      "privacy_reviewed": true,
+      "capture_method": "Actual Chromium screenshot after settled full compositor frame; existing UI, cropped to editor pane."
+    },
+    {
+      "file": "mobile-reader-ai-reply.png",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "mobile": true
+      },
+      "validation": {
+        "clip": {
+          "x": 0,
+          "y": 42.203125,
+          "width": 390,
+          "height": 801.796875,
+          "scale": 1
+        },
+        "horizontal_overflow": false,
+        "body_chars": 297
+      },
+      "pixels": {
+        "width": 390,
+        "height": 801
+      },
+      "privacy_reviewed": true,
+      "capture_method": "Actual Chromium screenshot after settled full compositor frame; existing UI, cropped to editor pane."
+    },
+    {
+      "file": "desktop-editor-context-reply.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "mobile": false
+      },
+      "validation": {
+        "clip": {
+          "x": 814,
+          "y": 0,
+          "width": 626,
+          "height": 1000,
+          "scale": 1
+        },
+        "horizontal_overflow": false,
+        "body_chars": 278
+      },
+      "pixels": {
+        "width": 626,
+        "height": 1000
+      },
+      "privacy_reviewed": true,
+      "capture_method": "Actual Chromium screenshot after settled full compositor frame; existing UI, cropped to editor pane."
+    },
+    {
+      "file": "mobile-editor-context-reply.png",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "mobile": true
+      },
+      "validation": {
+        "clip": {
+          "x": 0,
+          "y": 42.203125,
+          "width": 390,
+          "height": 801.796875,
+          "scale": 1
+        },
+        "horizontal_overflow": false,
+        "body_chars": 278
+      },
+      "pixels": {
+        "width": 390,
+        "height": 801
+      },
+      "privacy_reviewed": true,
+      "capture_method": "Actual Chromium screenshot after settled full compositor frame; existing UI, cropped to editor pane."
+    },
+    {
+      "file": "desktop-editor-typed-reply.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "mobile": false
+      },
+      "validation": {
+        "clip": {
+          "x": 814,
+          "y": 0,
+          "width": 626,
+          "height": 1000,
+          "scale": 1
+        },
+        "horizontal_overflow": false,
+        "body_chars": 278
+      },
+      "pixels": {
+        "width": 626,
+        "height": 1000
+      },
+      "privacy_reviewed": true,
+      "capture_method": "Actual Chromium screenshot after settled full compositor frame; existing UI, cropped to editor pane."
+    },
+    {
+      "file": "mobile-editor-typed-reply.png",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "mobile": true
+      },
+      "validation": {
+        "clip": {
+          "x": 0,
+          "y": 42.203125,
+          "width": 390,
+          "height": 801.796875,
+          "scale": 1
+        },
+        "horizontal_overflow": false,
+        "body_chars": 278
+      },
+      "pixels": {
+        "width": 390,
+        "height": 801
+      },
+      "privacy_reviewed": true,
+      "capture_method": "Actual Chromium screenshot after settled full compositor frame; existing UI, cropped to editor pane."
+    },
+    {
+      "file": "desktop-edited-draft-kept.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "mobile": false
+      },
+      "validation": {
+        "clip": {
+          "x": 814,
+          "y": 0,
+          "width": 626,
+          "height": 1000,
+          "scale": 1
+        },
+        "horizontal_overflow": false,
+        "body_chars": 242
+      },
+      "pixels": {
+        "width": 626,
+        "height": 1000
+      },
+      "privacy_reviewed": true,
+      "capture_method": "Actual Chromium screenshot after settled full compositor frame; existing UI, cropped to editor pane."
+    },
+    {
+      "file": "mobile-edited-draft-kept.png",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "mobile": true
+      },
+      "validation": {
+        "clip": {
+          "x": 0,
+          "y": 42.203125,
+          "width": 390,
+          "height": 801.796875,
+          "scale": 1
+        },
+        "horizontal_overflow": false,
+        "body_chars": 242
+      },
+      "pixels": {
+        "width": 390,
+        "height": 801
+      },
+      "privacy_reviewed": true,
+      "capture_method": "Actual Chromium screenshot after settled full compositor frame; existing UI, cropped to editor pane."
+    },
+    {
+      "file": "desktop-invalid-status-draft-kept.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "mobile": false
+      },
+      "validation": {
+        "clip": {
+          "x": 814,
+          "y": 0,
+          "width": 626,
+          "height": 1000,
+          "scale": 1
+        },
+        "horizontal_overflow": false,
+        "body_chars": 242
+      },
+      "pixels": {
+        "width": 626,
+        "height": 1000
+      },
+      "privacy_reviewed": true,
+      "capture_method": "Actual Chromium screenshot after settled full compositor frame; existing UI, cropped to editor pane."
+    },
+    {
+      "file": "mobile-invalid-status-draft-kept.png",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "mobile": true
+      },
+      "validation": {
+        "clip": {
+          "x": 0,
+          "y": 42.203125,
+          "width": 390,
+          "height": 801.796875,
+          "scale": 1
+        },
+        "horizontal_overflow": false,
+        "body_chars": 242
+      },
+      "pixels": {
+        "width": 390,
+        "height": 801
+      },
+      "privacy_reviewed": true,
+      "capture_method": "Actual Chromium screenshot after settled full compositor frame; existing UI, cropped to editor pane."
+    },
+    {
+      "file": "desktop-unfinished-stream-draft-kept.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "mobile": false
+      },
+      "validation": {
+        "clip": {
+          "x": 814,
+          "y": 0,
+          "width": 626,
+          "height": 1000,
+          "scale": 1
+        },
+        "horizontal_overflow": false,
+        "body_chars": 242
+      },
+      "pixels": {
+        "width": 626,
+        "height": 1000
+      },
+      "privacy_reviewed": true,
+      "capture_method": "Actual Chromium screenshot after settled full compositor frame; existing UI, cropped to editor pane."
+    },
+    {
+      "file": "mobile-unfinished-stream-draft-kept.png",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "mobile": true
+      },
+      "validation": {
+        "clip": {
+          "x": 0,
+          "y": 42.203125,
+          "width": 390,
+          "height": 801.796875,
+          "scale": 1
+        },
+        "horizontal_overflow": false,
+        "body_chars": 242
+      },
+      "pixels": {
+        "width": 390,
+        "height": 801
+      },
+      "privacy_reviewed": true,
+      "capture_method": "Actual Chromium screenshot after settled full compositor frame; existing UI, cropped to editor pane."
+    }
+  ],
+  "no_send_attempts": true,
+  "privacy": "Fresh synthetic data only; background chat and model controls hidden for cropped UI captures.",
+  "validated_at": "2026-10-06T19:32:14.212Z",
+  "browser_capture_head": "07cd2ea5e06da43472e2c322e45f701a31b7433a",
+  "source_integrity": {
+    "ui_file_hashes": {
+      "static/js/document.js": {
+        "committed_sha256": "5966c08a328bae6a41f3230a415ff7b232fcaea2c946e792aeebcc0d5c73a27a",
+        "served_source_sha256": "5966c08a328bae6a41f3230a415ff7b232fcaea2c946e792aeebcc0d5c73a27a",
+        "match": true,
+        "final_head_sha256": "5966c08a328bae6a41f3230a415ff7b232fcaea2c946e792aeebcc0d5c73a27a"
+      },
+      "static/js/emailInbox.js": {
+        "committed_sha256": "af9790c27cfc9bd5472f5c5676aade77e930d0b9177fd9f33f3d476a9f217b2a",
+        "served_source_sha256": "af9790c27cfc9bd5472f5c5676aade77e930d0b9177fd9f33f3d476a9f217b2a",
+        "match": true,
+        "final_head_sha256": "af9790c27cfc9bd5472f5c5676aade77e930d0b9177fd9f33f3d476a9f217b2a"
+      },
+      "static/js/emailLibrary.js": {
+        "committed_sha256": "b86d7ee3cfc61221f3a7d6de76fc0612ee6c5b406e8a96b318be4ada9ca3e96a",
+        "served_source_sha256": "b86d7ee3cfc61221f3a7d6de76fc0612ee6c5b406e8a96b318be4ada9ca3e96a",
+        "match": true,
+        "final_head_sha256": "b86d7ee3cfc61221f3a7d6de76fc0612ee6c5b406e8a96b318be4ada9ca3e96a"
+      },
+      "static/js/emailReplyText.js": {
+        "committed_sha256": "e68598e545bf7c7bbcd9ab8965ed875e28c05e6d913c313ca2ffe1ac0ed01862",
+        "served_source_sha256": "e68598e545bf7c7bbcd9ab8965ed875e28c05e6d913c313ca2ffe1ac0ed01862",
+        "match": true,
+        "final_head_sha256": "e68598e545bf7c7bbcd9ab8965ed875e28c05e6d913c313ca2ffe1ac0ed01862"
+      },
+      "static/js/emailReplyStream.js": {
+        "committed_sha256": "64d8bfc31ec153c80ec13993022f311c2cbd2e78098e5ab170d561a7af75874d",
+        "served_source_sha256": "64d8bfc31ec153c80ec13993022f311c2cbd2e78098e5ab170d561a7af75874d",
+        "match": true,
+        "final_head_sha256": "64d8bfc31ec153c80ec13993022f311c2cbd2e78098e5ab170d561a7af75874d"
+      },
+      "static/js/emailLibrary/aiReply.js": {
+        "committed_sha256": "c04416b03fa0d7d785a1c6c1af4f47ceeddf0a936f051790fc91ffe4baeafa2b",
+        "served_source_sha256": "c04416b03fa0d7d785a1c6c1af4f47ceeddf0a936f051790fc91ffe4baeafa2b",
+        "match": true,
+        "final_head_sha256": "c04416b03fa0d7d785a1c6c1af4f47ceeddf0a936f051790fc91ffe4baeafa2b"
+      },
+      "static/js/emailLibrary/index.js": {
+        "committed_sha256": "94e9f80be300cc1982efb8f16454cdcb2e1ef581d45606dc978698af4e1f2888",
+        "served_source_sha256": "94e9f80be300cc1982efb8f16454cdcb2e1ef581d45606dc978698af4e1f2888",
+        "match": true,
+        "final_head_sha256": "94e9f80be300cc1982efb8f16454cdcb2e1ef581d45606dc978698af4e1f2888"
+      },
+      "static/js/emailLibrary/reader.js": {
+        "committed_sha256": "a97de42f6a66c9cbe3470f7016d92594ec4a840bcd7cec078bf5dd711199c1d5",
+        "served_source_sha256": "a97de42f6a66c9cbe3470f7016d92594ec4a840bcd7cec078bf5dd711199c1d5",
+        "match": true,
+        "final_head_sha256": "a97de42f6a66c9cbe3470f7016d92594ec4a840bcd7cec078bf5dd711199c1d5"
+      },
+      "static/js/emailLibrary/state.js": {
+        "committed_sha256": "ff65324951d25c1fabeb1d29527fcb60103c0036b81a8ccc913b5707a4b75f82",
+        "served_source_sha256": "ff65324951d25c1fabeb1d29527fcb60103c0036b81a8ccc913b5707a4b75f82",
+        "match": true,
+        "final_head_sha256": "ff65324951d25c1fabeb1d29527fcb60103c0036b81a8ccc913b5707a4b75f82"
+      },
+      "static/sw.js": {
+        "committed_sha256": "438cbf8c73b19d59802a985981b77f544653bd8b30b160090e10dcbf58ee96b3",
+        "served_source_sha256": "438cbf8c73b19d59802a985981b77f544653bd8b30b160090e10dcbf58ee96b3",
+        "match": true,
+        "final_head_sha256": "438cbf8c73b19d59802a985981b77f544653bd8b30b160090e10dcbf58ee96b3"
+      }
+    },
+    "all_match": true,
+    "source_binding": "Read-only /work mount in odysseus-reply-refresh-app; compared committed capture head with deployed files."
+  },
+  "focused_tests": {
+    "pytest_passed": 107,
+    "node_sse_passed": 3,
+    "syntax_and_diff_checks": "passed",
+    "security_fixture_note": "Both Chromium security regressions passed; typed/media draft inspection remains inert and final output rendering/sandbox boundaries are checked."
+  },
+  "privacy_reviewed": true,
+  "recommended_public_captures": [
+    "desktop-editor-typed-reply.png",
+    "mobile-editor-typed-reply.png"
+  ],
+  "artifact_integrity": {
+    "desktop-reader-ai-reply.png": {
+      "sha256": "259fce0828b1b32ba4fe3d276b13c1b82820d7ee3f133e8765c95313ac075a1a",
+      "bytes": 44075
+    },
+    "mobile-reader-ai-reply.png": {
+      "sha256": "639933ddb0758b91793681671c97169a1c8da40420b090814de0f3d9caf8e725",
+      "bytes": 31835
+    },
+    "desktop-editor-context-reply.png": {
+      "sha256": "d81b896542a469a14524305d97397f805b085148927d630bad854c7b062d22ee",
+      "bytes": 39862
+    },
+    "mobile-editor-context-reply.png": {
+      "sha256": "31f593c042ebfb927f74850708ca87cc37bc7204ffe2f7faebc824590fd0aa76",
+      "bytes": 31308
+    },
+    "desktop-editor-typed-reply.png": {
+      "sha256": "e2408a456d097fb9af14406a5ab2eabed535274deb13218ed0abae45421ce153",
+      "bytes": 40254
+    },
+    "mobile-editor-typed-reply.png": {
+      "sha256": "332fb9651879516ab2e6c4d51f03c429b3d2d3ffefdbf02f0cec1ecc4a956b22",
+      "bytes": 31299
+    },
+    "desktop-edited-draft-kept.png": {
+      "sha256": "4c609c7a042ac49fabe716b6ed2169806282bd45a6f233062226700dd897797e",
+      "bytes": 37813
+    },
+    "mobile-edited-draft-kept.png": {
+      "sha256": "25b92426d385a34756be98e6deb1e42f363dfeb2e1a5008550e96bcecd227b02",
+      "bytes": 28958
+    },
+    "desktop-invalid-status-draft-kept.png": {
+      "sha256": "2c3d90822d015326fb27b453b1651201f3fb2fbe0517bcf433a04715e188873b",
+      "bytes": 41143
+    },
+    "mobile-invalid-status-draft-kept.png": {
+      "sha256": "e06dd05e0e11dc069655bdd86e91d4b58ca23aa82b6f02f49285fd65486a4c24",
+      "bytes": 28974
+    },
+    "desktop-unfinished-stream-draft-kept.png": {
+      "sha256": "6fcf6e08f62738421958e365169d806777aa634ed59ba56a45d43c936d05f03e",
+      "bytes": 41856
+    },
+    "mobile-unfinished-stream-draft-kept.png": {
+      "sha256": "8d14e97ac0d85263bb78730e3bb8642f2f49f57672de01015aa0c7b10ed1a9a2",
+      "bytes": 29002
+    }
+  },
+  "source_note": "Browser acceptance covers capture head. Backend-only changes require separate final-head API checks; compare these UI hashes with the final head.",
+  "final_head": "207d91d5e1b7e3e86ff1c36721119fa1241a1a2b"
+}

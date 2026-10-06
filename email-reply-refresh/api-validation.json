@@ -1,0 +1,39 @@
+{
+  "head": "207d91d5e1b7e3e86ff1c36721119fa1241a1a2b",
+  "base": "2cd02da7fc5d500fa86511f2a36ddb431de532c8",
+  "synthetic_only": true,
+  "no_send_attempts": true,
+  "runtime_restarted_on_final_head": true,
+  "api_cases": [
+    {
+      "name": "typed-draft",
+      "success": true,
+      "reply": "Hi Taylor,\n\nThursday works, you can come Thursday.\n\nBest,\nMorgan",
+      "stream": false
+    },
+    {
+      "name": "explicit-guidance",
+      "success": true,
+      "reply": "Hi Taylor,\nThursday works, you can come Thursday.\nBest,\nMorgan",
+      "stream": false
+    },
+    {
+      "name": "streamed-guidance",
+      "success": true,
+      "reply": "Hi Taylor,\n\nThursday works, you can come Thursday.\n\nBest,\nMorgan",
+      "stream": true
+    }
+  ],
+  "backend_sha256": {
+    "app.py": "20a2c71240ffe1c1bbe766f4b2bc3167114e2a5b783d709cf1e38ac4ba0ef8ca",
+    "routes/email/email_helpers.py": "e8e2226117c7445dbe64660fd1250b8501fd7c1f1511324b32a8406ca338ab5f",
+    "routes/email/email_routes.py": "3c168f85414a0ba69a9337adebb09faf76c6ec0032701f56d560f955ff11143f",
+    "src/email_reply_stream.py": "2a5b3af5b25401500342122a8909baeba12f0afc8257926dba072de4c3c758a1",
+    "src/llm_core.py": "640eac9fcd17f7ec4aff467820da4459222485493f8082b3dd1cf27417615e17"
+  },
+  "frontend_matches_browser_capture": true,
+  "browser_capture_head": "07cd2ea5e06da43472e2c322e45f701a31b7433a",
+  "followup_scope": "Legacy positional completion API compatibility, existing browser security fixture dependencies/assertions, generated source references, and AI-only helper definition placement; frontend code unchanged.",
+  "deployed_backend_hashes_match": true,
+  "validated_at": "2026-10-06T19:48:13.307546+00:00"
+}
