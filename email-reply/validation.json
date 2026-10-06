@@ -1,5 +1,5 @@
 {
-  "public_head": "7e81fca0",
+  "public_head": "3794c216bab2d40cb5893fb283c9005ba174d952",
   "app_base": "http://127.0.0.1:7001",
   "synthetic_only": true,
   "cases": [
@@ -47,7 +47,7 @@
     {
       "name": "editor_polishes_typed_intent",
       "live_local_generation": true,
-      "own_body": "Hi Taylor,\n\n\n\n\nThursday works, you can come Thursday.\n\n\n\n\nBest regards,\n\n\n\n\nMorgan",
+      "own_body": "Hi Taylor,\n\n\n\n\n\nThursday works, so you can come over Thursday.\n\n\n\n\n\nBest regards,\n\n\n\n\nMorgan",
       "quote_count": 1,
       "request": {
         "mode": "live",
@@ -60,7 +60,7 @@
       "delivery": {
         "mode": "live",
         "success": true,
-        "reply": "Hi Taylor,\nThursday works, you can come Thursday.\nBest regards,\nMorgan",
+        "reply": "Hi Taylor,\n\nThursday works, so you can come over Thursday.\n\nBest regards,\nMorgan",
         "error": ""
       }
     },
@@ -171,7 +171,7 @@
           "scale": 1
         },
         "horizontal_overflow": false,
-        "body_chars": 276
+        "body_chars": 286
       }
     },
     {
@@ -190,7 +190,7 @@
           "scale": 1
         },
         "horizontal_overflow": false,
-        "body_chars": 276
+        "body_chars": 286
       }
     },
     {
@@ -272,12 +272,25 @@
   ],
   "no_send_attempts": true,
   "privacy": "Fresh synthetic data only; background chat and model controls hidden for cropped UI captures.",
-  "validated_at": "2026-10-06T08:19:42.325Z",
+  "validated_at": "2026-10-06T08:31:47.250Z",
   "privacy_reviewed": true,
   "recommended_public_captures": [
     "desktop-editor-typed-reply.png",
     "mobile-editor-typed-reply.png"
   ],
+  "source_integrity": {
+    "matches_public_head": true,
+    "file_sha256": {
+      "app.py": "2b323ba0572014a3ccb11b77a034facc1766b231dcb78a62e5beca9c87a0763e",
+      "routes/email_helpers.py": "35006f38fa5f0cabe91987cbbe93d42bc5591ab241110e60cec408ab99e8fab2",
+      "routes/email_routes.py": "f81681368accf5956b479e754b31c2184dbb75aa4ccad5c1b21838e0b23e59ad",
+      "src/llm_core.py": "3cff00d874f2825a617de7d876363deec074b5e0dd62e0d6e0a0d6dda5f2b768",
+      "static/js/document.js": "2d8173f6a359f39d02ead9122ea70c5ca7d3c30c1e7bcee2ca4b3b766854c3be",
+      "static/js/emailInbox.js": "eee0b4b9653a8f9c419c2d7c6872f4bddd4057079ad499f78f27268f46010559",
+      "static/js/emailLibrary.js": "237681950cb0fb24a539d4b63d13851c540e911c3ded351e37afc47f686bef80",
+      "static/js/emailReplyText.js": "e68598e545bf7c7bbcd9ab8965ed875e28c05e6d913c313ca2ffe1ac0ed01862"
+    }
+  },
   "artifact_integrity": [
     {
       "file": "desktop-edited-draft-kept.png",
@@ -286,13 +299,13 @@
     },
     {
       "file": "desktop-editor-context-reply.png",
-      "bytes": 38333,
-      "sha256": "8fca717504764f473a4f25a751e3c29790316a25f2a1c642c36a1cc0778d7f23"
+      "bytes": 38292,
+      "sha256": "37bd98d162ac718e2102479d22e299f259eeb44a71394f46565d0102e390cf54"
     },
     {
       "file": "desktop-editor-typed-reply.png",
-      "bytes": 38576,
-      "sha256": "a6ffe5c0be4dea5964456e6935c77c3d2adcfd2caab985ef14e6bef51b4f157f"
+      "bytes": 39117,
+      "sha256": "71accdf84d5e7912abb7bea654595ac3291773fd308ae14ae8637adead778b3b"
     },
     {
       "file": "desktop-invalid-status-draft-kept.png",
@@ -301,8 +314,8 @@
     },
     {
       "file": "desktop-reader-ai-reply.png",
-      "bytes": 42185,
-      "sha256": "9507c473b6d645acdbeea36c3906ff37943f2fb95759c8c4b80778c3eeeb4f0b"
+      "bytes": 41886,
+      "sha256": "19ebe6c183538f55fdb175d53521c0f3d00133222e6f4deaefe246c693bf479b"
     },
     {
       "file": "mobile-edited-draft-kept.png",
@@ -316,18 +329,20 @@
     },
     {
       "file": "mobile-editor-typed-reply.png",
-      "bytes": 32440,
-      "sha256": "d3dace9b1db141239b960af253bbb209cc0fc3073f49e0ddbac7666ff6f94f99"
+      "bytes": 32902,
+      "sha256": "15a1336e89040290d2563071b29ca6fe9af9e9647d48289971e293718b9a1226"
     },
     {
       "file": "mobile-invalid-status-draft-kept.png",
-      "bytes": 30107,
-      "sha256": "495c039e2fe18a2ab612ed85f4549a70515453de090af121eb98e5c60ec4f6ce"
+      "bytes": 32768,
+      "sha256": "0c8628279bdd011159aee25e792240e69df63069c55be5d1126af59db5d12eb3"
     },
     {
       "file": "mobile-reader-ai-reply.png",
-      "bytes": 32445,
-      "sha256": "1c427f62138caba092a885a6f11fdb8c99506879bd68fb80b48ebb3422623968"
+      "bytes": 32470,
+      "sha256": "fb21bb2c1752455f661fd46371dcdc109b02476d918c4c94c0bef5c402e5c269"
     }
-  ]
+  ],
+  "verified_public_runtime_head": "54360d24c1f833750ebbccfa8a88550dae8951b6",
+  "final_test_only_change": "Replaced simulated credential text with a plain provider diagnostic; all eight runtime files are identical to the browser-tested head."
 }
