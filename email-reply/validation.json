@@ -1,0 +1,276 @@
+{
+  "public_head": "7e81fca0",
+  "app_base": "http://127.0.0.1:7001",
+  "synthetic_only": true,
+  "cases": [
+    {
+      "name": "reader_context_reply",
+      "live_local_generation": true,
+      "body": "Hi Taylor,\n\n\n\n\n\nThursday works, you can come Thursday.\n\n\n\n\n\nBest regards,\n\n\n\n\nMorgan\n\n\n\n\n---------- Previous message ----------\nOn Tue, 6 Oct 2026, 11:00, Taylor  wrote:\n> Hi Morgan,\n>\n> Would Tuesday be suitable for me to come over? Please confirm which day works for you.\n>\n> Best regards,\n> Taylor",
+      "own_body": "Hi Taylor,\n\n\n\n\n\nThursday works, you can come Thursday.\n\n\n\n\n\nBest regards,\n\n\n\n\nMorgan",
+      "quote_count": 1,
+      "request": {
+        "mode": "live",
+        "user_hint": "Thursday works, you can come Thursday",
+        "current_draft": "",
+        "original_body": "Hi Morgan,\n\nWould Tuesday be suitable for me to come over? Please confirm which day works for you.\n\nBest regards,\nTaylor",
+        "folder": "INBOX",
+        "uid": "reply-fixture-42"
+      },
+      "delivery": {
+        "mode": "live",
+        "success": true,
+        "reply": "Hi Taylor,\n\nThursday works, you can come Thursday.\n\nBest regards,\nMorgan",
+        "error": ""
+      }
+    },
+    {
+      "name": "editor_explicit_note_overrides_typed_draft",
+      "live_local_generation": true,
+      "own_body": "Hi Taylor,\n\n\n\n\n\nThursday works, you can come Thursday.\n\n\n\n\n\nBest regards,\n\n\n\n\nMorgan",
+      "quote_count": 1,
+      "request": {
+        "mode": "live",
+        "user_hint": "Thursday works, you can come Thursday",
+        "current_draft": "Tuesday works, you can come Tuesday",
+        "original_body": "---------- Previous message ----------\nOn Tuesday, Taylor  wrote:\n> Hi Morgan,\n>\n> Would Tuesday be suitable for me to come over? Please confirm which day works for you.\n>\n> Best regards,\n> Taylor",
+        "folder": "INBOX",
+        "uid": "reply-editor-1"
+      },
+      "delivery": {
+        "mode": "live",
+        "success": true,
+        "reply": "Hi Taylor,\n\nThursday works, you can come Thursday.\n\nBest regards,\nMorgan",
+        "error": ""
+      }
+    },
+    {
+      "name": "editor_polishes_typed_intent",
+      "live_local_generation": true,
+      "own_body": "Hi Taylor,\n\n\n\n\nThursday works, you can come Thursday.\n\n\n\n\nBest regards,\n\n\n\n\nMorgan",
+      "quote_count": 1,
+      "request": {
+        "mode": "live",
+        "user_hint": "",
+        "current_draft": "Thursday works, you can come Thursday",
+        "original_body": "---------- Previous message ----------\nOn Tuesday, Taylor  wrote:\n> Hi Morgan,\n>\n> Would Tuesday be suitable for me to come over? Please confirm which day works for you.\n>\n> Best regards,\n> Taylor",
+        "folder": "INBOX",
+        "uid": "reply-editor-2"
+      },
+      "delivery": {
+        "mode": "live",
+        "success": true,
+        "reply": "Hi Taylor,\nThursday works, you can come Thursday.\nBest regards,\nMorgan",
+        "error": ""
+      }
+    },
+    {
+      "name": "late_edit_preserved",
+      "controlled_delivery_delay": true,
+      "live_local_generation": true,
+      "own_body": "Morgan typed a new sentence while AI was drafting.",
+      "quote_count": 1
+    },
+    {
+      "name": "status_only_rejected",
+      "controlled_invalid_api_response": true,
+      "own_body": "Morgan typed a new sentence while AI was drafting.",
+      "retained_note": "Thursday works, you can come Thursday"
+    }
+  ],
+  "captures": [
+    {
+      "file": "desktop-reader-ai-reply.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "mobile": false
+      },
+      "validation": {
+        "clip": {
+          "x": 814,
+          "y": 0,
+          "width": 626,
+          "height": 1000,
+          "scale": 1
+        },
+        "horizontal_overflow": false,
+        "body_chars": 293
+      }
+    },
+    {
+      "file": "mobile-reader-ai-reply.png",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "mobile": true
+      },
+      "validation": {
+        "clip": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844,
+          "scale": 1
+        },
+        "horizontal_overflow": false,
+        "body_chars": 293
+      }
+    },
+    {
+      "file": "desktop-editor-context-reply.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "mobile": false
+      },
+      "validation": {
+        "clip": {
+          "x": 814,
+          "y": 0,
+          "width": 626,
+          "height": 1000,
+          "scale": 1
+        },
+        "horizontal_overflow": false,
+        "body_chars": 278
+      }
+    },
+    {
+      "file": "mobile-editor-context-reply.png",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "mobile": true
+      },
+      "validation": {
+        "clip": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844,
+          "scale": 1
+        },
+        "horizontal_overflow": false,
+        "body_chars": 278
+      }
+    },
+    {
+      "file": "desktop-editor-typed-reply.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "mobile": false
+      },
+      "validation": {
+        "clip": {
+          "x": 814,
+          "y": 0,
+          "width": 626,
+          "height": 1000,
+          "scale": 1
+        },
+        "horizontal_overflow": false,
+        "body_chars": 276
+      }
+    },
+    {
+      "file": "mobile-editor-typed-reply.png",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "mobile": true
+      },
+      "validation": {
+        "clip": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844,
+          "scale": 1
+        },
+        "horizontal_overflow": false,
+        "body_chars": 276
+      }
+    },
+    {
+      "file": "desktop-edited-draft-kept.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "mobile": false
+      },
+      "validation": {
+        "clip": {
+          "x": 814,
+          "y": 0,
+          "width": 626,
+          "height": 1000,
+          "scale": 1
+        },
+        "horizontal_overflow": false,
+        "body_chars": 242
+      }
+    },
+    {
+      "file": "mobile-edited-draft-kept.png",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "mobile": true
+      },
+      "validation": {
+        "clip": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844,
+          "scale": 1
+        },
+        "horizontal_overflow": false,
+        "body_chars": 242
+      }
+    },
+    {
+      "file": "desktop-invalid-status-draft-kept.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "mobile": false
+      },
+      "validation": {
+        "clip": {
+          "x": 814,
+          "y": 0,
+          "width": 626,
+          "height": 1000,
+          "scale": 1
+        },
+        "horizontal_overflow": false,
+        "body_chars": 242
+      }
+    },
+    {
+      "file": "mobile-invalid-status-draft-kept.png",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "mobile": true
+      },
+      "validation": {
+        "clip": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844,
+          "scale": 1
+        },
+        "horizontal_overflow": false,
+        "body_chars": 242
+      }
+    }
+  ],
+  "no_send_attempts": true,
+  "privacy": "Fresh synthetic data only; background chat and model controls hidden for cropped UI captures.",
+  "validated_at": "2026-10-06T08:19:42.325Z"
+}
