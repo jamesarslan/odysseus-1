@@ -2,8 +2,11 @@
 
 import json
 import sqlite3
+import subprocess
+import sys
 from collections import deque
 from contextlib import contextmanager
+from pathlib import Path
 from types import SimpleNamespace
 
 import httpx
@@ -325,6 +328,25 @@ async def test_remote_provider_request_uses_strict_output_without_local_extensio
     assert "require_complete_response" not in replies.requests[0]
 
 
+async def test_initial_provider_failure_does_not_expose_private_details_to_ui(replies):
+    from src import llm_core
+    private_detail = "Internal diagnostic from the fixture provider"
+    replies.outputs.append(httpx.Response(400, json={"error": {"message": private_detail}}))
+
+    result = await replies.generate()
+
+    assert result["success"] is False
+    assert result["error"]
+    assert "reply" not in result
+    serialized = json.dumps(result)
+    assert private_detail not in serialized
+    assert "llama:8081" not in serialized
+    assert replies.cached() == []
+    assert not llm_core._response_cache
+    assert len(replies.requests) == 1
+    assert replies.requests[0]["chat_template_kwargs"] == {"enable_thinking": False}
+
+
 @pytest.mark.parametrize("text", [
     "", "Done", "<<<REPLY>>>Done.<<<END>>>",
     "<think>Only planning</think>",
@@ -332,6 +354,8 @@ async def test_remote_provider_request_uses_strict_output_without_local_extensio
     "<<<REPLY>>>An unfinished marker block",
     "<<<SUMMARY>>>- A summary, rather than a reply.<<<END>>>",
     "The user wants an email reply confirming Thursday.",
+    "User: Confirm Thursday.\nAssistant: Thursday works for me.",
+    "System: Draft a reply.\nAssistant: Thursday works for me.",
 ])
 def test_reply_extractor_rejects_status_reasoning_and_wrong_artifacts(text):
     from routes.email_helpers import _extract_ai_reply
@@ -349,6 +373,25 @@ def test_reply_extractor_rejects_status_reasoning_and_wrong_artifacts(text):
 def test_reply_extractor_preserves_normal_prose_and_finished_marker_body(text, expected):
     from routes.email_helpers import _extract_ai_reply
     assert _extract_ai_reply(text) == expected
+
+
+def test_long_unpaired_user_field_is_processed_without_backtracking_hang():
+    # Run in a bounded child process: a regression to the old paired-role regex
+    # must fail the test, rather than hold up the whole test suite indefinitely.
+    text = "User:" + "\n" * 40_000 + "The fixture account needs read-only access."
+    script = (
+        "import json, sys\n"
+        "from routes.email_helpers import _extract_ai_reply\n"
+        "text = sys.stdin.read()\n"
+        "reply = _extract_ai_reply(text)\n"
+        "print(json.dumps({'preserved': reply == text, 'length': len(reply)}))\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        input=text, text=True, capture_output=True,
+        cwd=Path(__file__).parents[1], timeout=5, check=True,
+    )
+    assert json.loads(result.stdout) == {"preserved": True, "length": len(text)}
 
 
 def test_explicit_literal_done_is_allowed_but_negated_guidance_is_respected():

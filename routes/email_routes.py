@@ -5369,9 +5369,8 @@ def setup_email_routes():
                     enable_thinking=False,
                 )
             except Exception as e:
-                detail = getattr(e, "detail", None) or str(e)
-                _attempted = ", ".join(f"{m}@{u.split('/')[2] if '/' in u else u}" for u, m, _ in _candidates) or "no candidates"
-                return {"success": False, "error": f"Couldn't generate a completed reply ({_attempted}): {detail}"}
+                logger.warning("AI reply generation failed for configured endpoints: %s", type(e).__name__)
+                return {"success": False, "error": "AI reply could not finish. Please try again or check the model connection in Settings."}
 
             reply = _apply_email_style_mechanics(_extract_ai_reply(reply_raw or "", user_hint=user_hint, current_draft=current_draft))
             if not reply:
@@ -5418,8 +5417,7 @@ def setup_email_routes():
                     except Exception as retry_exc:
                         logger.warning("AI reply retry failed model=%s: %s", cand_model, retry_exc)
             if not reply:
-                _attempted = ", ".join(f"{m}@{u.split('/')[2] if '/' in u else u}" for u, m, _ in _candidates) or "no candidates"
-                return {"success": False, "error": f"AI reply did not return a finished reply after retrying: {_attempted}"}
+                return {"success": False, "error": "AI reply did not return a finished reply after retrying. Please try again."}
 
             # Cache so next click is instant
             if use_generic_cache:

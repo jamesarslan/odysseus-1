@@ -294,10 +294,15 @@ def _extract_ai_reply(text: str, *, user_hint: str = "", current_draft: str = ""
         clean = rest[:closing.start()].strip()
     elif _REPLY_OPEN_RE.search(clean) or _REPLY_CLOSE_RE.search(clean):
         return ""
-    if _REPLY_ROLE_MARKER_RE.search(clean) or (not opening and re.search(
-        r"(?is)^\s*(?:system|user)\s*:.*\n\s*assistant\s*:", clean,
-    )):
+    if _REPLY_ROLE_MARKER_RE.search(clean):
         return ""
+    if not opening:
+        lines = clean.splitlines()
+        first_role = lines[0].partition(":")[0].strip().lower() if lines else ""
+        if first_role in {"system", "user", "assistant"}:
+            roles = {line.partition(":")[0].strip().lower() for line in lines}
+            if "assistant" in roles and roles.intersection({"system", "user"}):
+                return ""
     clean = _strip_think(clean).strip()
     if not clean:
         return ""
