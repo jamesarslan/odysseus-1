@@ -1,0 +1,62 @@
+{
+  "head": "ca727b79340e6feb6628f73c4b54b64b84503534",
+  "previous_head": "207d91d5e1b7e3e86ff1c36721119fa1241a1a2b",
+  "base": "2c8e00ca0551cda3052d529bfa08f7c263b85588",
+  "behind_dev": 0,
+  "scope_files": 17,
+  "runtime_comparison": {
+    "app.py": {
+      "old_sha256": "20a2c71240ffe1c1bbe766f4b2bc3167114e2a5b783d709cf1e38ac4ba0ef8ca",
+      "current_sha256": "20a2c71240ffe1c1bbe766f4b2bc3167114e2a5b783d709cf1e38ac4ba0ef8ca",
+      "equal": true
+    },
+    "routes/email/email_helpers.py": {
+      "old_sha256": "e8e2226117c7445dbe64660fd1250b8501fd7c1f1511324b32a8406ca338ab5f",
+      "current_sha256": "e8e2226117c7445dbe64660fd1250b8501fd7c1f1511324b32a8406ca338ab5f",
+      "equal": true
+    },
+    "routes/email/email_routes.py": {
+      "old_sha256": "3c168f85414a0ba69a9337adebb09faf76c6ec0032701f56d560f955ff11143f",
+      "current_sha256": "3c168f85414a0ba69a9337adebb09faf76c6ec0032701f56d560f955ff11143f",
+      "equal": true
+    },
+    "src/email_reply_stream.py": {
+      "old_sha256": "2a5b3af5b25401500342122a8909baeba12f0afc8257926dba072de4c3c758a1",
+      "current_sha256": "2a5b3af5b25401500342122a8909baeba12f0afc8257926dba072de4c3c758a1",
+      "equal": true
+    },
+    "src/llm_core.py": {
+      "old_sha256": "640eac9fcd17f7ec4aff467820da4459222485493f8082b3dd1cf27417615e17",
+      "current_sha256": "640eac9fcd17f7ec4aff467820da4459222485493f8082b3dd1cf27417615e17",
+      "equal": true
+    },
+    "static/js/document.js": {
+      "old_sha256": "5966c08a328bae6a41f3230a415ff7b232fcaea2c946e792aeebcc0d5c73a27a",
+      "current_sha256": "5966c08a328bae6a41f3230a415ff7b232fcaea2c946e792aeebcc0d5c73a27a",
+      "equal": true
+    },
+    "static/js/emailInbox.js": {
+      "old_sha256": "af9790c27cfc9bd5472f5c5676aade77e930d0b9177fd9f33f3d476a9f217b2a",
+      "current_sha256": "af9790c27cfc9bd5472f5c5676aade77e930d0b9177fd9f33f3d476a9f217b2a",
+      "equal": true
+    },
+    "static/js/emailReplyText.js": {
+      "old_sha256": "e68598e545bf7c7bbcd9ab8965ed875e28c05e6d913c313ca2ffe1ac0ed01862",
+      "current_sha256": "e68598e545bf7c7bbcd9ab8965ed875e28c05e6d913c313ca2ffe1ac0ed01862",
+      "equal": true
+    },
+    "static/sw.js": {
+      "old_sha256": "438cbf8c73b19d59802a985981b77f544653bd8b30b160090e10dcbf58ee96b3",
+      "current_sha256": "bb0bbb665ffeaf3c4bf4850469d64a02ec444cca40acd53918ee0ad2918aaca8",
+      "equal": false
+    }
+  },
+  "generated_reference_matches_upstream": true,
+  "generated_reference_pr_delta": false,
+  "focused_tests": {
+    "backend_platform_reference_publication_tests_passed": 159,
+    "ui_cache_modulegraph_publication_security_tests_passed": 94,
+    "includes_actual_chromium": true
+  },
+  "capture_note": "Historical screenshots remain tied to their recorded capture heads. PR runtime code is identical except the reply service-worker cache bump and inherited upstream asset additions."
+}
