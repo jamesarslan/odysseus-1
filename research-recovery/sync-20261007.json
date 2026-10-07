@@ -1,0 +1,63 @@
+{
+  "head": "d9b6947158f066f4d9897a95a2f3e51813cdd355",
+  "previous_head": "e7e0112a6f323db339b6a3db87e08736116d65c0",
+  "base": "2c8e00ca0551cda3052d529bfa08f7c263b85588",
+  "behind_dev": 0,
+  "scope_files": 19,
+  "runtime_comparison": {
+    "routes/research/research_routes.py": {
+      "old_sha256": "27d9231da1d04ca12360fdc24f0a7d5a689e1ba9c874ed83597d99c0ba6e4361",
+      "current_sha256": "27d9231da1d04ca12360fdc24f0a7d5a689e1ba9c874ed83597d99c0ba6e4361",
+      "equal": true
+    },
+    "services/search/analytics.py": {
+      "old_sha256": "c6686e25dd613a57034a37c6d95b677ae6e2d26f802f9318d585a03236586d04",
+      "current_sha256": "c6686e25dd613a57034a37c6d95b677ae6e2d26f802f9318d585a03236586d04",
+      "equal": true
+    },
+    "services/search/providers.py": {
+      "old_sha256": "2433e4521114e7dc9daa71f6809e3ad09dbfd3da45fc269e2b944d44e72890cb",
+      "current_sha256": "2433e4521114e7dc9daa71f6809e3ad09dbfd3da45fc269e2b944d44e72890cb",
+      "equal": true
+    },
+    "src/deep_research.py": {
+      "old_sha256": "fe0749bd6776a7f4724623a26770811038f8f3457d6796bb320004d780b83c48",
+      "current_sha256": "fe0749bd6776a7f4724623a26770811038f8f3457d6796bb320004d780b83c48",
+      "equal": true
+    },
+    "src/llm_core.py": {
+      "old_sha256": "640eac9fcd17f7ec4aff467820da4459222485493f8082b3dd1cf27417615e17",
+      "current_sha256": "640eac9fcd17f7ec4aff467820da4459222485493f8082b3dd1cf27417615e17",
+      "equal": true
+    },
+    "src/research_handler.py": {
+      "old_sha256": "a49eaca1ee81ec3e3d2d7907b4feb1ab4546cd54b90d34f5ce2ebf88848660ea",
+      "current_sha256": "a49eaca1ee81ec3e3d2d7907b4feb1ab4546cd54b90d34f5ce2ebf88848660ea",
+      "equal": true
+    },
+    "static/css/17-research.css": {
+      "old_sha256": "fd54ddd42e8578a8fbed6f473c743f3512e39e3c0f385e70624228b404da00e7",
+      "current_sha256": "fd54ddd42e8578a8fbed6f473c743f3512e39e3c0f385e70624228b404da00e7",
+      "equal": true
+    },
+    "static/js/research/jobs.js": {
+      "old_sha256": "5bf33f2825f4523ae0837906f024bf93ecc60541b92761ffb0596dc742213971",
+      "current_sha256": "5bf33f2825f4523ae0837906f024bf93ecc60541b92761ffb0596dc742213971",
+      "equal": true
+    },
+    "static/js/research/panel.js": {
+      "old_sha256": "1b40d49adf2bb6f3801dc6d47c1ac38f78c8eab12f1360877e7e49ec52f886af",
+      "current_sha256": "1b40d49adf2bb6f3801dc6d47c1ac38f78c8eab12f1360877e7e49ec52f886af",
+      "equal": true
+    }
+  },
+  "generated_reference_matches_upstream": true,
+  "generated_reference_pr_delta": false,
+  "focused_tests": {
+    "llm_reference_tests_passed": 114,
+    "research_provider_ui_tests_passed": 162,
+    "upstream_integration_tests_passed": 35,
+    "includes_actual_chromium": true
+  },
+  "capture_note": "Historical screenshots remain tied to their recorded capture heads. PR runtime code is identical except the reply service-worker cache bump and inherited upstream asset additions."
+}
