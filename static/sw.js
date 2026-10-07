@@ -7,7 +7,7 @@
 //   - Other static assets (images/fonts/libs): cache-first with bg refresh.
 //   - API / non-GET: never cached.
 // Bump CACHE_NAME whenever the precache list or SW logic changes.
-const CACHE_NAME = 'odysseus-v658-email-reply-final';
+const CACHE_NAME = 'odysseus-v659-email-reply-final';
 
 // KaTeX resolves these from its own stylesheet, so caching the CSS without them
 // gives offline math fallback glyphs instead of proper typesetting.
@@ -136,6 +136,10 @@ const PRECACHE = [
   '/static/lib/katex/katex.min.js',
   '/static/lib/katex/katex.min.css',
   ...KATEX_FONTS,
+  '/static/manifest.json',
+  '/static/icons/icon-192.png',
+  '/static/icons/icon-512.png',
+  '/static/icons/icon-maskable-512.png',
 ];
 
 // Lazily-imported panel modules (js/panels.js). Not in index.html by design;
