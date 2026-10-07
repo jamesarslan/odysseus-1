@@ -1,0 +1,109 @@
+{
+  "base": "2c8e00ca0551cda3052d529bfa08f7c263b85588",
+  "heads": {
+    "6504": "a7898746a63604b56563094253ba958181574353",
+    "6508": "d9b6947158f066f4d9897a95a2f3e51813cdd355",
+    "6517": "ca727b79340e6feb6628f73c4b54b64b84503534"
+  },
+  "behind_dev": {
+    "6504": 0,
+    "6508": 0,
+    "6517": 0
+  },
+  "pairs": [
+    {
+      "prs": [
+        6504,
+        6508
+      ],
+      "clean": true,
+      "tree": "facc6e683e8399088a423abc3b371f6c65bbc45e"
+    },
+    {
+      "prs": [
+        6504,
+        6517
+      ],
+      "clean": true,
+      "tree": "fb66bdb678efb8a669c0c0c1dd2c0d60e0f1401c"
+    },
+    {
+      "prs": [
+        6508,
+        6517
+      ],
+      "clean": true,
+      "tree": "4f203060258d26c059eeca79ef81dba82a3d9901"
+    }
+  ],
+  "all_orders": [
+    {
+      "order": [
+        6504,
+        6508,
+        6517
+      ],
+      "clean": true,
+      "tree": "d53b1632bd5776c4f588276b72524eec6bf90dc1"
+    },
+    {
+      "order": [
+        6504,
+        6517,
+        6508
+      ],
+      "clean": true,
+      "tree": "d53b1632bd5776c4f588276b72524eec6bf90dc1"
+    },
+    {
+      "order": [
+        6508,
+        6504,
+        6517
+      ],
+      "clean": true,
+      "tree": "d53b1632bd5776c4f588276b72524eec6bf90dc1"
+    },
+    {
+      "order": [
+        6508,
+        6517,
+        6504
+      ],
+      "clean": true,
+      "tree": "d53b1632bd5776c4f588276b72524eec6bf90dc1"
+    },
+    {
+      "order": [
+        6517,
+        6504,
+        6508
+      ],
+      "clean": true,
+      "tree": "d53b1632bd5776c4f588276b72524eec6bf90dc1"
+    },
+    {
+      "order": [
+        6517,
+        6508,
+        6504
+      ],
+      "clean": true,
+      "tree": "d53b1632bd5776c4f588276b72524eec6bf90dc1"
+    }
+  ],
+  "same_tree_all_orders": true,
+  "combined_regressions": {
+    "passed": 179,
+    "skipped": 0,
+    "groups": [
+      "generated reference freshness",
+      "default/strict completion",
+      "local thinking controls",
+      "email intent/cache",
+      "reply SSE",
+      "IMAP parsing/discovery"
+    ],
+    "network": "offline isolated container; synthetic fixtures"
+  }
+}

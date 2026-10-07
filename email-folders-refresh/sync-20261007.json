@@ -1,0 +1,61 @@
+{
+  "head": "a7898746a63604b56563094253ba958181574353",
+  "previous_head": "2c65321051da7827725d35bff6d05d1bd99065ca",
+  "base": "2c8e00ca0551cda3052d529bfa08f7c263b85588",
+  "behind_dev": 0,
+  "scope_files": 15,
+  "runtime_comparison": {
+    "mcp_servers/email_server.py": {
+      "old_sha256": "4c8e527065ed5ec17b7dbc32e671dbe7db6e0064738e8dcd300f7342f10034ca",
+      "current_sha256": "4c8e527065ed5ec17b7dbc32e671dbe7db6e0064738e8dcd300f7342f10034ca",
+      "equal": true
+    },
+    "routes/email/email_helpers.py": {
+      "old_sha256": "ef0efbc508c70163ac577d31a9dedc2f40807ca2fd562d7478d750aa7114640b",
+      "current_sha256": "ef0efbc508c70163ac577d31a9dedc2f40807ca2fd562d7478d750aa7114640b",
+      "equal": true
+    },
+    "routes/email/email_pollers.py": {
+      "old_sha256": "2fd6094327c0cd21f5d2c923bf157213bce4d196e4fbd866f7794c85271cf098",
+      "current_sha256": "2fd6094327c0cd21f5d2c923bf157213bce4d196e4fbd866f7794c85271cf098",
+      "equal": true
+    },
+    "routes/email/email_routes.py": {
+      "old_sha256": "019db5037bcb2162af002ea3735bc488bb575decad37322488ac1c664e05dead",
+      "current_sha256": "019db5037bcb2162af002ea3735bc488bb575decad37322488ac1c664e05dead",
+      "equal": true
+    },
+    "src/imap_folders.py": {
+      "old_sha256": "56b7062757ebfa0bc8224a1716757bef726db52c222fe09779023f0e30074163",
+      "current_sha256": "56b7062757ebfa0bc8224a1716757bef726db52c222fe09779023f0e30074163",
+      "equal": true
+    },
+    "static/js/emailInbox.js": {
+      "old_sha256": "ad7dc702666ad51ad40786a71878b9be08f7644edf40988dabea8623e35d5bee",
+      "current_sha256": "ad7dc702666ad51ad40786a71878b9be08f7644edf40988dabea8623e35d5bee",
+      "equal": true
+    },
+    "static/js/emailLibrary/index.js": {
+      "old_sha256": "c1dbf11a33d0d2aae98e8f198c0950c4b0e74eb44dac56b6350e0baa9321ad1d",
+      "current_sha256": "c1dbf11a33d0d2aae98e8f198c0950c4b0e74eb44dac56b6350e0baa9321ad1d",
+      "equal": true
+    },
+    "static/js/emailLibrary/menus.js": {
+      "old_sha256": "526a321c0c8395a62382d7a6a2b701656878fffc8b0b37eff2a58c575f9538f1",
+      "current_sha256": "526a321c0c8395a62382d7a6a2b701656878fffc8b0b37eff2a58c575f9538f1",
+      "equal": true
+    },
+    "static/js/emailLibrary/state.js": {
+      "old_sha256": "d5df11f1b7961d61b13075a890141d8dfdc818ac592f9c602d8f61f884c67a26",
+      "current_sha256": "d5df11f1b7961d61b13075a890141d8dfdc818ac592f9c602d8f61f884c67a26",
+      "equal": true
+    }
+  },
+  "generated_reference_matches_upstream": true,
+  "generated_reference_pr_delta": false,
+  "focused_tests": {
+    "upstream_integration_tests_passed": 50,
+    "includes_actual_chromium": true
+  },
+  "capture_note": "Historical screenshots remain tied to their recorded capture heads. PR runtime code is identical except the reply service-worker cache bump and inherited upstream asset additions."
+}
